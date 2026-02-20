@@ -6,3 +6,6 @@ __pycache__/
 artifacts/
 cache/
 deployed-addresses.json
+venv/
+backend/venv/
+backend/db/transactions.db
