@@ -12,12 +12,10 @@ module.exports = {
     }
   },
   etherscan: {
-    apiKey: {
-      polygonAmoy: process.env.POLYGONSCAN_API_KEY || ""
-    },
+    apiKey: process.env.POLYGONSCAN_API_KEY,
     customChains: [
       {
-        network: "polygonAmoy",
+        network: "amoy",
         chainId: 80002,
         urls: {
           apiURL: "https://api-amoy.polygonscan.com/api",
@@ -25,5 +23,8 @@ module.exports = {
         }
       }
     ]
+  },
+  sourcify: {
+    enabled: false
   }
 };
