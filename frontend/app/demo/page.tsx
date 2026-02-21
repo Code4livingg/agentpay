@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import ConnectButton from '@/components/ConnectButton';
 
 export default function Demo() {
   const [logs, setLogs] = useState<string[]>([]);
@@ -53,12 +54,26 @@ export default function Demo() {
 
   return (
     <main className="min-h-screen bg-gray-950 text-white">
+      {/* Nav */}
+      <nav className="flex justify-between items-center px-8 py-5 border-b border-gray-900">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 bg-purple-600 rounded-lg flex items-center justify-center text-xs font-bold">
+            A
+          </div>
+          <span className="font-semibold">AgentPay</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-xs bg-purple-950 border border-purple-800 text-purple-300 px-3 py-1.5 rounded-full">
+            <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse"></div>
+            Polygon Amoy Testnet
+          </div>
+          <ConnectButton />
+        </div>
+      </nav>
+
       <div className="max-w-4xl mx-auto px-6 py-12">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <div className="text-sm text-purple-400 font-mono mb-1">
-              🟣 Network: Polygon Amoy (Testnet)
-            </div>
             <h1 className="text-3xl font-bold">Demo Runner</h1>
           </div>
           <Link href="/" className="text-gray-400 hover:text-white text-sm">

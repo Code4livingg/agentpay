@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import ConnectButton from '@/components/ConnectButton';
 
 export default function Home() {
   return (
@@ -13,9 +14,12 @@ export default function Home() {
           </div>
           <span className="font-semibold">AgentPay</span>
         </div>
-        <div className="flex items-center gap-2 text-xs bg-purple-950 border border-purple-800 text-purple-300 px-3 py-1.5 rounded-full">
-          <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse"></div>
-          Polygon Amoy Testnet
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-xs bg-purple-950 border border-purple-800 text-purple-300 px-3 py-1.5 rounded-full">
+            <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse"></div>
+            Polygon Amoy Testnet
+          </div>
+          <ConnectButton />
         </div>
       </nav>
 
