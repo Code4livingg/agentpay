@@ -28,9 +28,23 @@ export default function Docs() {
         </Link>
 
         <h1 className="text-4xl font-bold mb-4">SDK Docs</h1>
-        <p className="text-gray-400 mb-12">
+        <p className="text-gray-400 mb-8">
           Integrate AgentPay into any Python AI agent in 3 steps.
         </p>
+
+        <div className="flex gap-3 mb-8">
+          <a 
+            href="https://github.com/Code4livingg/agentpay" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 bg-gray-900 border border-gray-800 hover:border-purple-700 px-4 py-2 rounded-lg text-sm transition"
+          >
+            <span>⭐</span> View on GitHub
+          </a>
+          <span className="flex items-center gap-2 bg-gray-900 border border-gray-800 px-4 py-2 rounded-lg text-sm text-gray-500">
+            v0.1.0
+          </span>
+        </div>
 
         <div className="space-y-10">
           <div>
@@ -110,6 +124,59 @@ registry.registerAgent(
               <div className="flex justify-between">
                 <span className="text-gray-500">USDC (ERC-20, Amoy)</span>
                 <span className="text-gray-400">0x41E9...7582</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-10">
+            <h2 className="text-lg font-semibold mb-3 text-purple-400">Architecture</h2>
+            <div className="bg-gray-950 border border-gray-800 rounded-xl p-6">
+              <div className="flex flex-col items-center gap-2 font-mono text-sm">
+                <div className="bg-gray-900 border border-gray-700 rounded-lg px-6 py-3 text-center">
+                  <div className="text-xs text-gray-500 mb-1">User / Operator</div>
+                  <div className="font-semibold">👤 Owner Wallet</div>
+                  <div className="text-xs text-gray-600">Sets policy, funds vault</div>
+                </div>
+
+                <div className="text-gray-600">↓</div>
+
+                <div className="bg-purple-950 border border-purple-800 rounded-lg px-6 py-3 text-center">
+                  <div className="text-xs text-purple-400 mb-1">Smart Contract</div>
+                  <div className="font-semibold">🔒 AgentVault.sol</div>
+                  <div className="text-xs text-gray-400">Enforces policy, holds USDC</div>
+                </div>
+
+                <div className="text-gray-600">↓</div>
+
+                <div className="bg-purple-950 border border-purple-800 rounded-lg px-6 py-3 text-center">
+                  <div className="text-xs text-purple-400 mb-1">Smart Contract</div>
+                  <div className="font-semibold">📋 PolicyRegistry.sol</div>
+                  <div className="text-xs text-gray-400">Stores spending rules per agent</div>
+                </div>
+
+                <div className="text-gray-600">↓</div>
+
+                <div className="bg-gray-900 border border-gray-700 rounded-lg px-6 py-3 text-center">
+                  <div className="text-xs text-gray-500 mb-1">Token</div>
+                  <div className="font-semibold">💵 USDC (ERC-20)</div>
+                  <div className="text-xs text-gray-600">Polygon Amoy Testnet</div>
+                </div>
+
+                <div className="text-gray-600">↓</div>
+
+                <div className="bg-gray-900 border border-gray-700 rounded-lg px-6 py-3 text-center">
+                  <div className="text-xs text-gray-500 mb-1">AI Agent</div>
+                  <div className="font-semibold">🤖 Python SDK</div>
+                  <div className="text-xs text-gray-600">Intercepts 402, submits payment</div>
+                </div>
+
+                <div className="text-gray-600">↓</div>
+
+                <div className="bg-gray-900 border border-gray-700 rounded-lg px-6 py-3 text-center">
+                  <div className="text-xs text-gray-500 mb-1">Paid Service</div>
+                  <div className="font-semibold">🌐 API Provider</div>
+                  <div className="text-xs text-gray-600">Returns data after payment proof</div>
+                </div>
               </div>
             </div>
           </div>

@@ -85,7 +85,7 @@ export default function Demo() {
       <div className="max-w-4xl mx-auto px-6 py-12">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold">Demo Runner</h1>
+            <h1 className="text-3xl font-bold">Live Agent Execution</h1>
           </div>
           <Link href="/" className="text-gray-400 hover:text-white text-sm">
             ← Back
