@@ -72,10 +72,33 @@ async def get_weather(x_payment_proof: Optional[str] = Header(None)):
                 "token": "USDC",
                 "token_address": "0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582",
                 "network": "Polygon Amoy Testnet",
-                "recipient": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0",
+                "recipient": "0x61254AEcF84eEdb890f07dD29f7F3cd3b8Eb2CBe",
                 "description": "Weather API - per request fee"
             }
         )
+    
+    # Save transaction to database when payment proof is received
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    created_at = datetime.utcnow().isoformat()
+    timestamp = int(time.time())
+    
+    cursor.execute("""
+        INSERT INTO transactions 
+        (agent_id, recipient, amount_usdc, tx_hash, status, timestamp, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (
+        "weather_agent",
+        "0x61254AEcF84eEdb890f07dD29f7F3cd3b8Eb2CBe",
+        0.001,
+        x_payment_proof,
+        "success",
+        timestamp,
+        created_at
+    ))
+    
+    conn.commit()
+    conn.close()
     
     return {
         "city": "Bangalore",
@@ -98,10 +121,33 @@ async def get_data_feed(x_payment_proof: Optional[str] = Header(None)):
                 "token": "USDC",
                 "token_address": "0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582",
                 "network": "Polygon Amoy Testnet",
-                "recipient": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0",
+                "recipient": "0x61254AEcF84eEdb890f07dD29f7F3cd3b8Eb2CBe",
                 "description": "Data Feed API"
             }
         )
+    
+    # Save transaction to database when payment proof is received
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    created_at = datetime.utcnow().isoformat()
+    timestamp = int(time.time())
+    
+    cursor.execute("""
+        INSERT INTO transactions 
+        (agent_id, recipient, amount_usdc, tx_hash, status, timestamp, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (
+        "weather_agent",
+        "0x61254AEcF84eEdb890f07dD29f7F3cd3b8Eb2CBe",
+        0.002,
+        x_payment_proof,
+        "success",
+        timestamp,
+        created_at
+    ))
+    
+    conn.commit()
+    conn.close()
     
     return {
         "market": "crypto",
