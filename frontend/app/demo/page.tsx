@@ -62,6 +62,17 @@ export default function Demo() {
           </div>
           <span className="font-semibold">AgentPay</span>
         </div>
+        <div className="flex items-center gap-6">
+          <Link href="/dashboard" className="text-sm text-gray-400 hover:text-white transition">
+            Dashboard
+          </Link>
+          <Link href="/demo" className="text-sm text-gray-400 hover:text-white transition">
+            Demo
+          </Link>
+          <Link href="/docs" className="text-sm text-gray-400 hover:text-white transition">
+            Docs
+          </Link>
+        </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 text-xs bg-purple-950 border border-purple-800 text-purple-300 px-3 py-1.5 rounded-full">
             <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse"></div>
