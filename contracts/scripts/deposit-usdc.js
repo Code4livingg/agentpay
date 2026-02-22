@@ -5,9 +5,11 @@ async function main() {
   const [signer] = await ethers.getSigners();
   const usdc = await ethers.getContractAt("IERC20", deployed.USDC);
   const vault = await ethers.getContractAt("AgentVault", deployed.AgentVault);
-  const agentId = ethers.encodeBytes32String("weather_agent");
+  // Use keccak256 to match Python SDK: Web3.keccak(text=agent_id)
+  const agentId = ethers.keccak256(ethers.toUtf8Bytes("weather_agent"));
   const amount = ethers.parseUnits("1", 6);
   
+  console.log("Agent ID (bytes32):", agentId);
   console.log("Approving USDC...");
   const tx1 = await usdc.approve(deployed.AgentVault, amount);
   await tx1.wait();

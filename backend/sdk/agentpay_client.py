@@ -24,6 +24,9 @@ AGENT_VAULT_ADDRESS = os.getenv("AGENT_VAULT_ADDRESS")
 USDC_ADDRESS = os.getenv("USDC_ADDRESS")
 BACKEND_URL = "http://127.0.0.1:8000"
 
+# Contract deployment block on Polygon Amoy
+DEPLOYMENT_BLOCK = 33980000
+
 # Mock mode flag
 MOCK_MODE = os.getenv("MOCK_PAYMENT", "false").lower() == "true"
 
@@ -49,11 +52,13 @@ if not MOCK_MODE:
 
     print(f"[✓] Connected to Polygon Amoy")
     print(f"[✓] Chain ID: {w3.eth.chain_id}")
+    print(f"[DEBUG] RPC URL: {ALCHEMY_RPC}")
 
     # Load account
     try:
         account = Account.from_key(PRIVATE_KEY)
         print(f"[✓] Account loaded: {account.address}")
+        print(f"[DEBUG] Backend wallet address: {account.address}")
     except Exception as e:
         raise ValueError(f"Failed to load account from PRIVATE_KEY: {str(e)}")
 
@@ -125,54 +130,44 @@ async def call_paid_endpoint(agent_id: str, endpoint: str) -> dict:
         network = payment_info["network"]
         
         # STEP 3: Prepare and execute transaction
-        if MOCK_MODE:
-            # Mock payment mode
-            print("[3] Executing on-chain payment (MOCK MODE)")
-            
-            # Generate fake transaction hash
-            tx_hash_hex = "0xMOCK_TX_" + agent_id[:8]
-            
-            print(f"[4] Transaction confirmed: {tx_hash_hex}")
-        else:
-            # Real payment mode
-            print("[3] Executing on-chain payment")
-            
-            # Convert agent_id to bytes32
-            agent_id_bytes = Web3.keccak(text=agent_id)
-            
-            # Convert USDC amount to 6 decimal units
-            amount_units = int(amount * 10**6)
-            
-            # Prepare recipient address
-            recipient_address = Web3.to_checksum_address(recipient)
-            
-            # Build transaction
-            nonce = w3.eth.get_transaction_count(account.address)
-            
-            transaction = agent_vault.functions.executePayment(
-                agent_id_bytes,
-                recipient_address,
-                amount_units
-            ).build_transaction({
-                'from': account.address,
-                'nonce': nonce,
-                'gas': 300000,
-                'gasPrice': w3.eth.gas_price,
-                'chainId': 80002
-            })
-            
-            # Sign and send transaction
-            signed_txn = account.sign_transaction(transaction)
-            tx_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction)
-            tx_hash_hex = tx_hash.hex()
-            
-            # Wait for receipt
-            receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
-            
-            if receipt['status'] == 0:
-                raise Exception("On-chain payment failed")
-            
-            print(f"[4] Transaction confirmed: {tx_hash_hex}")
+        print("[3] Executing on-chain payment")
+        
+        # Convert agent_id to bytes32
+        agent_id_bytes = Web3.keccak(text=agent_id)
+        
+        # Convert USDC amount to 6 decimal units
+        amount_units = int(amount * 10**6)
+        
+        # Prepare recipient address
+        recipient_address = Web3.to_checksum_address(recipient)
+        
+        # Build transaction
+        nonce = w3.eth.get_transaction_count(account.address)
+        
+        transaction = agent_vault.functions.executePayment(
+            agent_id_bytes,
+            recipient_address,
+            amount_units
+        ).build_transaction({
+            'from': account.address,
+            'nonce': nonce,
+            'gas': 300000,
+            'gasPrice': w3.to_wei(30, "gwei"),
+            'chainId': 80002
+        })
+        
+        # Sign and send transaction
+        signed_txn = account.sign_transaction(transaction)
+        tx_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction)
+        tx_hash_hex = tx_hash.hex()
+        
+        # Wait for receipt
+        receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+        
+        if receipt['status'] == 0:
+            raise Exception("On-chain payment failed")
+        
+        print(f"[4] Transaction confirmed: {tx_hash_hex}")
         
         # STEP 5: Retry endpoint with payment proof
         print("[5] Retrying endpoint")

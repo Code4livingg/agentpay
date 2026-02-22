@@ -10,6 +10,9 @@ import hashlib
 from datetime import datetime
 from dotenv import load_dotenv
 
+# Import contract instance from SDK
+from sdk.agentpay_client import agent_vault, MOCK_MODE, DEPLOYMENT_BLOCK
+
 load_dotenv()
 
 app = FastAPI(title="AgentPay API")
@@ -195,6 +198,48 @@ async def get_transactions():
         transactions.append(tx)
     
     return {"transactions": transactions}
+
+@app.get("/transactions/onchain")
+async def get_onchain_transactions():
+    """Get on-chain transactions from AgentVault contract events"""
+    if MOCK_MODE or agent_vault is None:
+        return {"error": "On-chain queries not available in mock mode", "transactions": []}
+    
+    try:
+        from sdk.agentpay_client import w3
+        
+        # Read all tx_hash values from SQLite
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("SELECT DISTINCT tx_hash FROM transactions WHERE tx_hash NOT LIKE '0xMOCK_TX_%'")
+        tx_hashes = [row[0] for row in cursor.fetchall()]
+        conn.close()
+        
+        transactions = []
+        for tx_hash in tx_hashes:
+            try:
+                # Get transaction receipt
+                receipt = w3.eth.get_transaction_receipt(tx_hash)
+                
+                # Process receipt to extract PaymentExecuted events
+                events = agent_vault.events.PaymentExecuted().process_receipt(receipt)
+                
+                for event in events:
+                    tx = {
+                        "tx_hash": event['transactionHash'].hex(),
+                        "block_number": event['blockNumber'],
+                        "agent_id": event['args']['agentId'].hex(),
+                        "recipient": event['args']['recipient'],
+                        "amount": event['args']['amount'] / 10**6,  # Convert from USDC units to float
+                    }
+                    transactions.append(tx)
+            except Exception as e:
+                # Skip transactions that fail to decode
+                continue
+        
+        return {"transactions": transactions}
+    except Exception as e:
+        return {"error": str(e), "transactions": []}
 
 @app.post("/transactions")
 async def create_transaction(transaction: Transaction):
