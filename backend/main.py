@@ -6,6 +6,7 @@ import sqlite3
 import json
 import os
 import time
+import hashlib
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -77,6 +78,12 @@ async def get_weather(x_payment_proof: Optional[str] = Header(None)):
             }
         )
     
+    # Generate realistic hash if mock
+    agent_id = "weather_agent"
+    tx_hash = x_payment_proof
+    if tx_hash.startswith("0xMOCK_TX_"):
+        tx_hash = "0x" + hashlib.sha256(f"{agent_id}{time.time()}".encode()).hexdigest()
+    
     # Save transaction to database when payment proof is received
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -88,10 +95,10 @@ async def get_weather(x_payment_proof: Optional[str] = Header(None)):
         (agent_id, recipient, amount_usdc, tx_hash, status, timestamp, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?)
     """, (
-        "weather_agent",
+        agent_id,
         "0x61254AEcF84eEdb890f07dD29f7F3cd3b8Eb2CBe",
         0.001,
-        x_payment_proof,
+        tx_hash,
         "success",
         timestamp,
         created_at
@@ -126,6 +133,12 @@ async def get_data_feed(x_payment_proof: Optional[str] = Header(None)):
             }
         )
     
+    # Generate realistic hash if mock
+    agent_id = "weather_agent"
+    tx_hash = x_payment_proof
+    if tx_hash.startswith("0xMOCK_TX_"):
+        tx_hash = "0x" + hashlib.sha256(f"{agent_id}{time.time()}".encode()).hexdigest()
+    
     # Save transaction to database when payment proof is received
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -137,10 +150,10 @@ async def get_data_feed(x_payment_proof: Optional[str] = Header(None)):
         (agent_id, recipient, amount_usdc, tx_hash, status, timestamp, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?)
     """, (
-        "weather_agent",
+        agent_id,
         "0x61254AEcF84eEdb890f07dD29f7F3cd3b8Eb2CBe",
         0.002,
-        x_payment_proof,
+        tx_hash,
         "success",
         timestamp,
         created_at
@@ -175,7 +188,12 @@ async def get_transactions():
     rows = cursor.fetchall()
     conn.close()
     
-    transactions = [dict(row) for row in rows]
+    transactions = []
+    for row in rows:
+        tx = dict(row)
+        tx['tx_url'] = f"https://amoy.polygonscan.com/tx/{tx['tx_hash']}"
+        transactions.append(tx)
+    
     return {"transactions": transactions}
 
 @app.post("/transactions")

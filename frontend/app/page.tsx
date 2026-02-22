@@ -70,6 +70,47 @@ export default function Home() {
           </Link>
         </div>
 
+        <div className="mb-16">
+          <p className="text-xs text-gray-600 uppercase tracking-widest mb-6">How it works</p>
+          <div className="grid grid-cols-4 gap-2">
+            <div className="bg-gray-950 border border-gray-900 rounded-xl p-4 text-center">
+              <div className="w-8 h-8 bg-purple-950 rounded-lg flex items-center justify-center text-sm mx-auto mb-3">
+                👤
+              </div>
+              <div className="text-xs text-purple-400 font-mono mb-1">Step 1</div>
+              <div className="text-sm font-semibold mb-1">Human sets policy</div>
+              <div className="text-xs text-gray-600">Max per tx, daily cap, whitelist</div>
+            </div>
+
+            <div className="bg-gray-950 border border-gray-900 rounded-xl p-4 text-center">
+              <div className="w-8 h-8 bg-purple-950 rounded-lg flex items-center justify-center text-sm mx-auto mb-3">
+                🤖
+              </div>
+              <div className="text-xs text-purple-400 font-mono mb-1">Step 2</div>
+              <div className="text-sm font-semibold mb-1">Agent calls API</div>
+              <div className="text-xs text-gray-600">Gets 402 Payment Required</div>
+            </div>
+
+            <div className="bg-gray-950 border border-gray-900 rounded-xl p-4 text-center">
+              <div className="w-8 h-8 bg-purple-950 rounded-lg flex items-center justify-center text-sm mx-auto mb-3">
+                🔒
+              </div>
+              <div className="text-xs text-purple-400 font-mono mb-1">Step 3</div>
+              <div className="text-sm font-semibold mb-1">Contract enforces</div>
+              <div className="text-xs text-gray-600">Policy checked on-chain</div>
+            </div>
+
+            <div className="bg-gray-950 border border-gray-900 rounded-xl p-4 text-center">
+              <div className="w-8 h-8 bg-purple-950 rounded-lg flex items-center justify-center text-sm mx-auto mb-3">
+                ✅
+              </div>
+              <div className="text-xs text-purple-400 font-mono mb-1">Step 4</div>
+              <div className="text-sm font-semibold mb-1">USDC settles</div>
+              <div className="text-xs text-gray-600">API unlocks, agent gets data</div>
+            </div>
+          </div>
+        </div>
+
         {/* Stats */}
         <div className="grid grid-cols-3 gap-px bg-gray-900 rounded-2xl overflow-hidden border border-gray-900 mb-16">
           <div className="bg-black px-8 py-6">
@@ -92,6 +133,7 @@ export default function Home() {
             <div className="w-10 h-10 bg-purple-950 rounded-xl flex items-center justify-center text-lg mb-4">
               🔒
             </div>
+            <div className="text-xs text-purple-400 font-semibold mb-2">Hard limits. No runaway agents.</div>
             <h3 className="font-semibold mb-2">Policy Enforcement</h3>
             <p className="text-gray-500 text-sm leading-relaxed">
               Hard spending caps enforced by smart contract — not by trust. 
@@ -103,6 +145,7 @@ export default function Home() {
             <div className="w-10 h-10 bg-purple-950 rounded-xl flex items-center justify-center text-lg mb-4">
               ⚡
             </div>
+            <div className="text-xs text-purple-400 font-semibold mb-2">Native programmable payments.</div>
             <h3 className="font-semibold mb-2">x402 Payments</h3>
             <p className="text-gray-500 text-sm leading-relaxed">
               Agents auto-pay 402 endpoints in under 2 seconds. Polygon PoS makes 
@@ -114,6 +157,7 @@ export default function Home() {
             <div className="w-10 h-10 bg-purple-950 rounded-xl flex items-center justify-center text-lg mb-4">
               📊
             </div>
+            <div className="text-xs text-purple-400 font-semibold mb-2">Every micro-payment recorded on-chain.</div>
             <h3 className="font-semibold mb-2">Full Audit Trail</h3>
             <p className="text-gray-500 text-sm leading-relaxed">
               Every transaction logged on-chain. Pause any agent instantly. 

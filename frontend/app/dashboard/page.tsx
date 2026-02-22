@@ -12,6 +12,7 @@ interface Transaction {
   tx_hash: string;
   status: string;
   timestamp: number;
+  tx_url?: string;
 }
 
 export default function Dashboard() {
@@ -89,7 +90,24 @@ export default function Dashboard() {
             <div className="text-xs font-mono text-purple-400 truncate">
               USDC (ERC-20, Amoy Testnet)
             </div>
+            <div className="mt-2">
+              <a 
+                href="https://amoy.polygonscan.com/address/0x522996599e987d03cc9f07e77c3c11a3C23dE225#code" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-xs text-purple-400 hover:underline"
+              >
+                View on Polygonscan ↗
+              </a>
+            </div>
           </div>
+        </div>
+
+        <div className="flex justify-end mb-6">
+          <button className="flex items-center gap-2 bg-gray-900 border border-gray-800 hover:border-red-700 hover:text-red-400 text-gray-400 transition px-4 py-2 rounded-lg text-sm">
+            <span className="w-2 h-2 bg-green-400 rounded-full inline-block"></span>
+            Agent Active — Click to Pause
+          </button>
         </div>
 
         <div className="bg-gray-900 rounded-xl border border-gray-800">
@@ -128,8 +146,15 @@ export default function Dashboard() {
                     </td>
                     <td className="p-4 font-mono">{tx.agent_id}</td>
                     <td className="p-4">${tx.amount_usdc} USDC</td>
-                    <td className="p-4 font-mono text-purple-400 truncate max-w-xs">
-                      {tx.tx_hash?.slice(0, 16)}...
+                    <td className="p-4 font-mono text-purple-400">
+                      <a 
+                        href={tx.tx_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="hover:underline"
+                      >
+                        {tx.tx_hash?.slice(0, 18)}...
+                      </a>
                     </td>
                     <td className="p-4">
                       <span
