@@ -165,6 +165,77 @@ export default function Home() {
             </p>
           </div>
         </div>
+
+        {/* Security Model */}
+        <div className="mt-16 bg-gray-950 border border-gray-800 rounded-2xl p-8">
+          <div className="text-xs text-gray-600 uppercase tracking-widest mb-4">Security Model</div>
+          <h2 className="text-2xl font-bold mb-6">Non-custodial by design</h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <div className="flex gap-3">
+                <div className="w-5 h-5 bg-green-950 rounded flex items-center justify-center text-xs mt-0.5">
+                  ✓
+                </div>
+                <div>
+                  <div className="text-sm font-semibold mb-1">Agent never holds private keys</div>
+                  <div className="text-xs text-gray-500">All signing happens at the operator wallet layer, not inside agent logic.</div>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <div className="w-5 h-5 bg-green-950 rounded flex items-center justify-center text-xs mt-0.5">
+                  ✓
+                </div>
+                <div>
+                  <div className="text-sm font-semibold mb-1">Smart contract is final authority</div>
+                  <div className="text-xs text-gray-500">SDK pre-checks are for UX. The contract will revert any out-of-policy transaction on-chain.</div>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <div className="w-5 h-5 bg-green-950 rounded flex items-center justify-center text-xs mt-0.5">
+                  ✓
+                </div>
+                <div>
+                  <div className="text-sm font-semibold mb-1">Funds locked in vault contract</div>
+                  <div className="text-xs text-gray-500">USDC is held by AgentVault, not by the agent. Owner can withdraw at any time.</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex gap-3">
+                <div className="w-5 h-5 bg-green-950 rounded flex items-center justify-center text-xs mt-0.5">
+                  ✓
+                </div>
+                <div>
+                  <div className="text-sm font-semibold mb-1">Maximum loss is bounded</div>
+                  <div className="text-xs text-gray-500">Even in a full agent compromise, losses are capped by on-chain policy limits.</div>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <div className="w-5 h-5 bg-green-950 rounded flex items-center justify-center text-xs mt-0.5">
+                  ✓
+                </div>
+                <div>
+                  <div className="text-sm font-semibold mb-1">Instant human override</div>
+                  <div className="text-xs text-gray-500">Owner can pause any agent instantly. All payments stop immediately.</div>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <div className="w-5 h-5 bg-green-950 rounded flex items-center justify-center text-xs mt-0.5">
+                  ✓
+                </div>
+                <div>
+                  <div className="text-sm font-semibold mb-1">Full on-chain auditability</div>
+                  <div className="text-xs text-gray-500">Every payment emits an on-chain event. Nothing is hidden or off-chain only.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
   );

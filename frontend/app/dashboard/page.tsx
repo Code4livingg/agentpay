@@ -18,6 +18,11 @@ interface Transaction {
 export default function Dashboard() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showEditPolicy, setShowEditPolicy] = useState(false);
+  const [maxPerTx, setMaxPerTx] = useState('1.00');
+  const [dailyCap, setDailyCap] = useState('5.00');
+  const [showFundVault, setShowFundVault] = useState(false);
+  const [depositAmount, setDepositAmount] = useState('1.00');
 
   useEffect(() => {
     fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/transactions`)
@@ -77,7 +82,15 @@ export default function Dashboard() {
           </div>
 
           <div className="bg-gray-900 rounded-xl p-5 border border-gray-800">
-            <div className="text-gray-400 text-sm mb-1">Policy</div>
+            <div className="flex justify-between items-center mb-1">
+              <div className="text-gray-400 text-sm">Policy</div>
+              <button 
+                onClick={() => setShowEditPolicy(true)} 
+                className="text-xs text-purple-400 hover:underline"
+              >
+                Edit Policy
+              </button>
+            </div>
             <div className="font-semibold">Max $1.00 / tx</div>
             <div className="text-sm text-gray-400">Daily cap: $5.00</div>
           </div>
@@ -103,7 +116,13 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="flex justify-end mb-6">
+        <div className="flex justify-end gap-3 mb-6">
+          <button 
+            onClick={() => setShowFundVault(true)} 
+            className="flex items-center gap-2 bg-purple-950 border border-purple-800 hover:border-purple-600 text-purple-300 transition px-4 py-2 rounded-lg text-sm"
+          >
+            + Fund Vault
+          </button>
           <button className="flex items-center gap-2 bg-gray-900 border border-gray-800 hover:border-red-700 hover:text-red-400 text-gray-400 transition px-4 py-2 rounded-lg text-sm">
             <span className="w-2 h-2 bg-green-400 rounded-full inline-block"></span>
             Agent Active — Click to Pause
@@ -174,6 +193,125 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {showEditPolicy && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-gray-950 border border-gray-800 rounded-2xl p-8 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-6">Edit Agent Policy</h2>
+            
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="text-sm text-gray-400 mb-2 block">Max per transaction (USDC)</label>
+                <input
+                  type="number"
+                  value={maxPerTx}
+                  onChange={e => setMaxPerTx(e.target.value)}
+                  className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-purple-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-400 mb-2 block">Daily spending cap (USDC)</label>
+                <input
+                  type="number"
+                  value={dailyCap}
+                  onChange={e => setDailyCap(e.target.value)}
+                  className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-purple-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-400 mb-2 block">Whitelisted recipient</label>
+                <input
+                  type="text"
+                  defaultValue="0x61254AEcF84eEdb890f07dD29f7F3cd3b8Eb2CBe"
+                  className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white font-mono text-sm focus:border-purple-500 outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="text-xs text-gray-600 mb-6 p-3 bg-gray-900 rounded-lg">
+              ⚠️ Policy changes require an on-chain transaction signed by the agent owner wallet.
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowEditPolicy(false)}
+                className="flex-1 border border-gray-700 hover:border-gray-600 px-4 py-2 rounded-lg text-sm transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  alert('Connect wallet to sign policy update transaction');
+                  setShowEditPolicy(false);
+                }}
+                className="flex-1 bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-lg text-sm font-semibold transition"
+              >
+                Update Policy
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showFundVault && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-gray-950 border border-gray-800 rounded-2xl p-8 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-2">Fund Agent Vault</h2>
+            <p className="text-gray-500 text-sm mb-6">
+              Deposit USDC into the AgentVault contract. The agent will use this balance to pay for API calls within policy limits.
+            </p>
+
+            <div className="mb-4">
+              <label className="text-sm text-gray-400 mb-2 block">Amount (USDC)</label>
+              <input
+                type="number"
+                value={depositAmount}
+                onChange={e => setDepositAmount(e.target.value)}
+                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-purple-500 outline-none"
+              />
+            </div>
+
+            <div className="bg-gray-900 rounded-lg p-4 mb-6 space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-500">Depositing to</span>
+                <span className="font-mono text-xs text-purple-400">AgentVault: 0x5229...E225</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Network</span>
+                <span className="text-gray-300">Polygon Amoy Testnet</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Token</span>
+                <span className="text-gray-300">USDC (ERC-20)</span>
+              </div>
+            </div>
+
+            <div className="text-xs text-gray-600 mb-6 p-3 bg-gray-900 rounded-lg">
+              Two transactions required: (1) Approve USDC spend, (2) Deposit into vault.
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowFundVault(false)}
+                className="flex-1 border border-gray-700 px-4 py-2 rounded-lg text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  alert('Connect wallet to approve and deposit USDC');
+                  setShowFundVault(false);
+                }}
+                className="flex-1 bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-lg text-sm font-semibold"
+              >
+                Approve & Deposit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
