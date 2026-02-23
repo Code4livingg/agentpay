@@ -23,6 +23,7 @@ export default function Dashboard() {
   const [dailyCap, setDailyCap] = useState('5.00');
   const [showFundVault, setShowFundVault] = useState(false);
   const [depositAmount, setDepositAmount] = useState('1.00');
+  const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
     fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/transactions`)
@@ -78,7 +79,11 @@ export default function Dashboard() {
           <div className="bg-gray-900 rounded-xl p-5 border border-gray-800">
             <div className="text-gray-400 text-sm mb-1">Agent ID</div>
             <div className="font-mono font-semibold">weather_agent</div>
-            <div className="mt-2 text-xs text-green-400">🟢 Active</div>
+            {isPaused ? (
+              <div className="mt-2 text-xs text-red-400">🔴 Paused</div>
+            ) : (
+              <div className="mt-2 text-xs text-green-400">🟢 Active</div>
+            )}
           </div>
 
           <div className="bg-gray-900 rounded-xl p-5 border border-gray-800">
@@ -123,9 +128,16 @@ export default function Dashboard() {
           >
             + Fund Vault
           </button>
-          <button className="flex items-center gap-2 bg-gray-900 border border-gray-800 hover:border-red-700 hover:text-red-400 text-gray-400 transition px-4 py-2 rounded-lg text-sm">
-            <span className="w-2 h-2 bg-green-400 rounded-full inline-block"></span>
-            Agent Active — Click to Pause
+          <button 
+            onClick={() => setIsPaused(!isPaused)}
+            className={`flex items-center gap-2 border transition px-4 py-2 rounded-lg text-sm ${
+              isPaused 
+                ? 'bg-red-950 border-red-800 hover:border-red-600 text-red-300' 
+                : 'bg-gray-900 border-gray-800 hover:border-red-700 hover:text-red-400 text-gray-400'
+            }`}
+          >
+            <span className={`w-2 h-2 rounded-full inline-block ${isPaused ? 'bg-red-400' : 'bg-green-400'}`}></span>
+            {isPaused ? 'Agent Paused — Click to Resume' : 'Agent Active — Click to Pause'}
           </button>
         </div>
 
