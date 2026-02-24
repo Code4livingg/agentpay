@@ -9,7 +9,7 @@ export default function Docs() {
     <main className="min-h-screen bg-black text-white">
       <nav className="flex justify-between items-center px-8 py-5 border-b border-gray-900">
         <div className="flex items-center gap-2">
-          <LogoSVG variant="mark" width={36} height={36} />
+          <LogoSVG variant="mark" width={48} height={48} />
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 text-xs bg-purple-950 border border-purple-800 text-purple-300 px-3 py-1.5 rounded-full">

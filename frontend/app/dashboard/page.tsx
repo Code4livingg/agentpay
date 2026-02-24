@@ -43,7 +43,7 @@ export default function Dashboard() {
       {/* Nav */}
       <nav className="flex justify-between items-center px-8 py-5" style={{ borderBottom: '1px solid #1F2329' }}>
         <div className="flex items-center gap-2">
-          <LogoSVG variant="mark" width={36} height={36} />
+          <LogoSVG variant="mark" width={48} height={48} />
         </div>
         <div className="flex items-center gap-6">
           <Link href="/dashboard" className="text-sm hover:text-white transition" style={{ color: '#A1A8B3' }}>

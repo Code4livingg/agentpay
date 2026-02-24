@@ -11,7 +11,7 @@ export default function Home() {
       {/* Nav */}
       <nav className="flex justify-between items-center px-8 py-5" style={{ borderBottom: '1px solid #1F2329' }}>
         <div className="flex items-center gap-2">
-          <LogoSVG variant="mark" width={36} height={36} />
+          <LogoSVG variant="mark" width={48} height={48} />
         </div>
         <div className="flex items-center gap-6">
           <Link href="/dashboard" className="text-sm hover:text-white transition" style={{ color: '#A1A8B3' }}>
@@ -47,9 +47,9 @@ export default function Home() {
           >
             <LogoSVG 
               variant="full" 
-              width={280} 
-              height={70}
-              className="drop-shadow-[0_0_40px_rgba(0,209,255,0.3)]"
+              width={448} 
+              height={112}
+              className="drop-shadow-[0_0_50px_rgba(47,107,255,0.4)]"
             />
           </motion.div>
         </div>

@@ -1,13 +1,13 @@
 interface LogoSVGProps {
   width?: number;
   height?: number;
-  variant?: 'mark' | 'full';
+  variant?: 'mark' | 'full' | 'mono';
   className?: string;
 }
 
 export default function LogoSVG({ 
-  width = 36, 
-  height = 36, 
+  width = 48, 
+  height = 48, 
   variant = 'mark',
   className = '' 
 }: LogoSVGProps) {
@@ -17,37 +17,82 @@ export default function LogoSVG({
       <svg
         width={width}
         height={height}
-        viewBox="0 0 100 100"
+        viewBox="0 0 200 200"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         className={className}
       >
         <defs>
           <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#2F6BFF" />
-            <stop offset="100%" stopColor="#00D1FF" />
+            <stop offset="0%" stopColor="#00D1FF" />
+            <stop offset="100%" stopColor="#2F6BFF" />
           </linearGradient>
+          <filter id="innerGlow">
+            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
         </defs>
         
-        {/* Hexagon */}
+        {/* Hexagon outline */}
         <path
-          d="M50 5 L85 27.5 L85 72.5 L50 95 L15 72.5 L15 27.5 Z"
-          fill="url(#logoGradient)"
-          opacity="0.15"
+          d="M100 20 L170 60 L170 140 L100 180 L30 140 L30 60 Z"
+          fill="none"
           stroke="url(#logoGradient)"
-          strokeWidth="2"
+          strokeWidth="6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
         />
         
-        {/* Stylized A with arrow */}
+        {/* Stylized A with gradient fill */}
         <path
-          d="M50 30 L65 60 L58 60 L55 52 L45 52 L42 60 L35 60 L50 30 Z M50 40 L47 48 L53 48 L50 40 Z"
+          d="M70 130 L100 60 L130 130 L115 130 L110 115 L90 115 L85 130 Z M95 100 L100 85 L105 100 Z"
           fill="url(#logoGradient)"
+          filter="url(#innerGlow)"
         />
         
-        {/* Arrow pointing up */}
+        {/* Right-facing arrow */}
         <path
-          d="M50 25 L55 32 L52 32 L52 38 L48 38 L48 32 L45 32 Z"
+          d="M110 105 L145 105 L145 95 L110 95 L110 85 L160 100 L110 115 Z"
           fill="url(#logoGradient)"
+          filter="url(#innerGlow)"
+        />
+      </svg>
+    );
+  }
+
+  if (variant === 'mono') {
+    return (
+      <svg
+        width={width}
+        height={height}
+        viewBox="0 0 200 200"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className={className}
+      >
+        {/* Hexagon outline */}
+        <path
+          d="M100 20 L170 60 L170 140 L100 180 L30 140 L30 60 Z"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        
+        {/* Stylized A */}
+        <path
+          d="M70 130 L100 60 L130 130 L115 130 L110 115 L90 115 L85 130 Z M95 100 L100 85 L105 100 Z"
+          fill="currentColor"
+        />
+        
+        {/* Right-facing arrow */}
+        <path
+          d="M110 105 L145 105 L145 95 L110 95 L110 85 L160 100 L110 115 Z"
+          fill="currentColor"
         />
       </svg>
     );
@@ -58,48 +103,58 @@ export default function LogoSVG({
     <svg
       width={width}
       height={height}
-      viewBox="0 0 400 100"
+      viewBox="0 0 500 200"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
     >
       <defs>
         <linearGradient id="logoGradientFull" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#2F6BFF" />
-          <stop offset="100%" stopColor="#00D1FF" />
+          <stop offset="0%" stopColor="#00D1FF" />
+          <stop offset="100%" stopColor="#2F6BFF" />
         </linearGradient>
+        <filter id="innerGlowFull">
+          <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
       </defs>
       
       {/* Hexagon mark */}
       <path
-        d="M50 10 L80 27.5 L80 72.5 L50 90 L20 72.5 L20 27.5 Z"
-        fill="url(#logoGradientFull)"
-        opacity="0.15"
+        d="M100 20 L170 60 L170 140 L100 180 L30 140 L30 60 Z"
+        fill="none"
         stroke="url(#logoGradientFull)"
-        strokeWidth="2"
+        strokeWidth="6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
       
-      {/* Stylized A with arrow */}
+      {/* Stylized A */}
       <path
-        d="M50 30 L62 58 L57 58 L55 52 L45 52 L43 58 L38 58 L50 30 Z M50 38 L48 46 L52 46 L50 38 Z"
+        d="M70 130 L100 60 L130 130 L115 130 L110 115 L90 115 L85 130 Z M95 100 L100 85 L105 100 Z"
         fill="url(#logoGradientFull)"
+        filter="url(#innerGlowFull)"
       />
       
-      {/* Arrow pointing up */}
+      {/* Right-facing arrow */}
       <path
-        d="M50 26 L54 31 L52 31 L52 36 L48 36 L48 31 L46 31 Z"
+        d="M110 105 L145 105 L145 95 L110 95 L110 85 L160 100 L110 115 Z"
         fill="url(#logoGradientFull)"
+        filter="url(#innerGlowFull)"
       />
       
       {/* AgentPay text */}
       <text
-        x="105"
-        y="60"
+        x="210"
+        y="120"
         fontFamily="system-ui, -apple-system, sans-serif"
-        fontSize="32"
+        fontSize="48"
         fontWeight="700"
         fill="#E6E9EF"
-        letterSpacing="-0.5"
+        letterSpacing="-1"
       >
         AgentPay
       </text>

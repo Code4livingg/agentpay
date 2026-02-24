@@ -52,7 +52,10 @@ export default function ConnectButton() {
   return (
     <button
       onClick={() => connect({ connector: injected() })}
-      className="text-xs bg-purple-600 hover:bg-purple-500 transition px-4 py-2 rounded-lg font-semibold"
+      className="text-sm font-semibold transition px-6 py-3 rounded-lg"
+      style={{ backgroundColor: '#2F6BFF', color: 'white' }}
+      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4A7FFF'}
+      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2F6BFF'}
     >
       Connect Wallet
     </button>

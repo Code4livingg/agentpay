@@ -58,7 +58,7 @@ export default function Demo() {
       {/* Nav */}
       <nav className="flex justify-between items-center px-8 py-5 border-b border-gray-900">
         <div className="flex items-center gap-2">
-          <LogoSVG variant="mark" width={36} height={36} />
+          <LogoSVG variant="mark" width={48} height={48} />
         </div>
         <div className="flex items-center gap-6">
           <Link href="/dashboard" className="text-sm text-gray-400 hover:text-white transition">
