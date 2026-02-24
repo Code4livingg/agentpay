@@ -1,166 +1,296 @@
 # AgentPay
 
-> Policy-bound USDC micro-payments for AI agents on Polygon — smart contract enforced spending limits, fully auditable on-chain.
+> Policy-Enforced Execution Infrastructure for Autonomous Agents on Polygon
 
-## The Problem
+**AgentPay is the deterministic control layer that prevents autonomous AI agents from becoming financially unbounded.**
 
-Today, AI agents already pay indirectly for LLM inference, data APIs, and SaaS tools. Someone has to manually top up credits, manage API keys, and reconcile invoices. AgentPay removes the need for manual payment approval inside these production workflows.
+As AI agents begin executing financial actions independently, unconstrained autonomy introduces systemic risk. AgentPay formalizes bounded, deterministic execution on Polygon through enforceable on-chain policy.
 
-## Our Solution
+---
 
-Policy-bound USDC (ERC-20) micro-payments on Polygon PoS. Humans define rules once. Smart contract enforces them on-chain. Agent operates autonomously within those bounds.
+## Problem Statement
 
-Agents do not initiate arbitrary payments — payments occur only when a predefined tool or API call requires payment AND passes all policy checks.
+Autonomous agents require bounded financial authority. Without it:
 
-## Threat Model
+- **Runaway execution** — agents drain funds without limit
+- **No deterministic control** — spending behavior is unpredictable
+- **Unverified settlement** — no cryptographic proof of execution
+- **Systemic risk** — compromised agents cause unbounded financial damage
 
-AgentPay assumes agents may be buggy or compromised. All financial authority lives at the smart contract layer, never in agent logic. In a full agent compromise scenario, maximum loss is strictly bounded by on-chain policy limits.
+**AgentPay does not enable AI payments. It constrains and governs AI financial execution.**
 
-## Security Controls
+Traditional payment systems assume human oversight. Autonomous agents operate continuously at machine scale. They need:
 
-- Hard cap per transaction (contract-enforced)
-- Daily spending ceiling (contract-enforced)
-- Whitelist of approved recipients only
-- One-click human pause at any time
-- All limits enforced on-chain, not in AI logic
-- SDK performs pre-check for UX efficiency, but smart contract is the final source of truth and will revert any out-of-policy transaction on-chain
+1. **Bounded execution** — financial authority limited by enforceable policy
+2. **Deterministic control** — smart contract logic enforces predictable outcomes
+3. **Receipt-level verification** — cryptographic proof of every transaction
+4. **Machine-scale safety** — designed for high-frequency autonomous operation
 
-## How It Works
+AgentPay provides this execution governance layer on Polygon.
 
-**Flow 1 — x402 Payment Loop**
+---
 
-1. AI agent calls a paid API endpoint
-2. Server responds with 402 Payment Required + payment details
-3. AgentPay SDK checks policy (pre-check)
-4. Smart contract enforces policy (final check)
-5. USDC transferred to recipient on Polygon
-6. API retried with payment proof header
-7. Agent receives data — zero human clicks
+## Why AI Agents Need Bounded Execution
 
-**Flow 2 — Policy Enforcement**
+Autonomous agents are not humans. They:
+- Execute thousands of transactions per day without oversight
+- Operate continuously without manual intervention
+- Can be compromised or behave unexpectedly
+- Require deterministic, rule-bound financial authority
 
-- Agent attempts payment above limit → contract reverts
-- Agent attempts payment to non-whitelisted address → contract reverts
-- Human pauses agent → all payments stop instantly
+**Without bounded execution:**
+- Runaway agents drain funds
+- No cryptographic proof of execution
+- Financial authority is unlimited
+- Agents cannot operate safely at scale
 
-**Flow 3 — Audit Trail**
+**With AgentPay:**
+- Financial authority is limited by on-chain policy
+- Every transaction is receipt-verified
+- Spending limits and whitelists constrain behavior
+- Deterministic smart contract enforcement
+- Human operators retain full control via pause/policy updates
 
-- Every transaction logged on-chain via events
-- Dashboard shows real-time feed
-- Human can update policy or pause anytime
+**AgentPay is not a payment app. It is a financial control layer for autonomous agents.**
+
+---
 
 ## Why Polygon
 
-x402 is an emerging open payment standard with official SDK support for TypeScript and Python. Polygon PoS gas fees (~$0.001) make $0.003 API micro-payments economically viable. AgentPay is designed to accelerate x402 adoption on Polygon.
+AgentPay is built for Polygon PoS because:
 
-## Contracts (Polygon Amoy Testnet)
+1. **Low latency** — ~2 second block times enable deterministic confirmation
+2. **Low cost** — $0.001 gas fees make machine-scale execution economically viable
+3. **EVM compatibility** — standard Solidity contracts, no custom VM
+4. **Production-grade** — battle-tested infrastructure with high uptime
 
-| Contract | Address |
-|----------|---------|
-| AgentVault | [0x522996599e987d03cc9f07e77c3c11a3C23dE225](https://amoy.polygonscan.com/address/0x522996599e987d03cc9f07e77c3c11a3C23dE225#code) |
-| PolicyRegistry | [0xB99b7B14f8EDC5cEF7eDBbd51aA42588D831def6](https://amoy.polygonscan.com/address/0xB99b7B14f8EDC5cEF7eDBbd51aA42588D831def6#code) |
-| USDC (ERC-20, Amoy Testnet) | 0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582 |
+Polygon's execution environment makes bounded, deterministic agent execution practical at scale.
 
-## Target Users
+---
 
-- AI customer support platforms paying per-API-call
-- Autonomous research agents consuming data feeds
-- LLM routing platforms managing inference costs
-- Agent-based trading systems with strict spend controls
+## Architecture
 
-## Business Model
+```
+┌─────────────────┐
+│  Human Operator │  Sets policy, funds vault, monitors
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────┐
+│  Smart Contracts (Polygon Amoy Testnet)             │
+│                                                      │
+│  ┌──────────────────┐      ┌──────────────────┐   │
+│  │ PolicyRegistry   │◄─────┤  AgentVault      │   │
+│  │                  │      │                  │   │
+│  │ - maxPerTx       │      │ - executePayment │   │
+│  │ - dailyCap       │      │ - deposit        │   │
+│  │ - whitelist      │      │ - withdraw       │   │
+│  │ - paused         │      │ - pause          │   │
+│  └──────────────────┘      └──────────────────┘   │
+│                                     │               │
+│                                     ▼               │
+│                            ┌──────────────────┐    │
+│                            │  USDC (ERC-20)   │    │
+│                            └──────────────────┘    │
+└─────────────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────┐
+│  Python SDK     │  Intercepts 402, executes payment, retries
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│  Paid API       │  Returns data after payment proof
+└─────────────────┘
+```
 
-0.25% on agent transaction volume. B2B: sold to companies deploying production AI agents. As AI agent usage scales, transaction volume scales automatically with no additional sales overhead.
+---
 
-## Tech Stack
+## Execution Flow
 
-| Layer | Technology |
-|-------|-----------|
-| Smart Contracts | Solidity, Hardhat, OpenZeppelin |
-| Blockchain | Polygon PoS (Amoy Testnet) |
-| Token | USDC (ERC-20) |
-| Payment Protocol | x402 (emerging open standard) |
-| AI Agent | Python, LangChain |
-| Backend | FastAPI (Python) |
-| Frontend | Next.js 14, Tailwind CSS |
-| Testing | Hardhat (14 tests passing) |
+### 1. Policy Setup (One-Time)
+```solidity
+policyRegistry.registerAgent(
+  agentId,
+  maxPerTx: 1 USDC,
+  dailyCap: 5 USDC,
+  whitelist: [0xRecipient1, 0xRecipient2]
+)
+```
 
-## Live Demo
+### 2. Vault Funding (As Needed)
+```solidity
+usdc.approve(agentVault, amount)
+agentVault.deposit(agentId, amount)
+```
 
-- **Frontend:** https://agentpay-henna.vercel.app
-- **Contracts:** Verified on Polygonscan (links above)
-- **Demo Video:** [link]
+### 3. Autonomous Payment (Agent-Initiated)
+```python
+# Agent calls paid API
+result = await call_paid_endpoint(
+  agent_id="weather_agent",
+  endpoint="https://api.example.com/weather"
+)
 
-## Run Locally
+# SDK handles:
+# 1. Detects 402 Payment Required
+# 2. Checks policy (pre-check for UX)
+# 3. Submits on-chain transaction
+# 4. Contract enforces policy (final check)
+# 5. USDC transferred to recipient
+# 6. Retries endpoint with payment proof
+# 7. Returns data to agent
+```
 
-**Backend:**
+### 4. Receipt Verification
+Every payment emits an on-chain event:
+```solidity
+event PaymentExecuted(
+  bytes32 indexed agentId,
+  address indexed recipient,
+  uint256 amount
+)
+```
 
+Receipts are cryptographically verifiable and permanently logged.
+
+---
+
+## Execution Governance Model
+
+### Threat: Agent Compromise
+**Mitigation:** Financial authority is bounded by `maxPerTx` and `dailyCap`. Even if agent is fully compromised, execution authority is limited.
+
+### Threat: Runaway Spending
+**Mitigation:** Smart contract reverts any transaction exceeding policy limits. No discretionary overrides. Deterministic enforcement.
+
+### Threat: Unauthorized Recipients
+**Mitigation:** Whitelist enforced on-chain. Execution to non-whitelisted addresses reverts.
+
+### Threat: Loss of Control
+**Mitigation:** Human operator can pause agent execution authority instantly. All transactions stop immediately.
+
+### Threat: Unverified Execution
+**Mitigation:** Receipt-level verification. Block number and gas usage surfaced. Event decoding ensures confirmed settlement.
+
+---
+
+## Demo Instructions
+
+### Prerequisites
+- Node.js 18+
+- Python 3.11+
+- Polygon Amoy testnet MATIC (for gas)
+- Polygon Amoy testnet USDC
+
+### 1. Clone Repository
+```bash
+git clone https://github.com/Code4livingg/agentpay
+cd agentpay
+```
+
+### 2. Deploy Contracts (Already Deployed)
+Contracts are deployed and verified on Polygon Amoy:
+- **AgentVault**: `0x522996599e987d03cc9f07e77c3c11a3C23dE225`
+- **PolicyRegistry**: `0xB99b7B14f8EDC5cEF7eDBbd51aA42588D831def6`
+- **USDC (Testnet)**: `0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582`
+
+### 3. Setup Backend
 ```bash
 cd backend
 python3.11 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
+
+# Configure .env
+cp .env.example .env
+# Add your PRIVATE_KEY and ALCHEMY_RPC
+
+# Run backend
+uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
-**Frontend:**
-
+### 4. Setup Frontend
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-**Smart Contracts:**
-
-```bash
-cd contracts
-npm install
-npx hardhat test
-npx hardhat run scripts/deploy.js --network amoy
-```
-
-**Agent Demo:**
-
+### 5. Run Agent Demo
 ```bash
 cd backend
 source venv/bin/activate
-MOCK_PAYMENT=true python agent_demo.py
+python test_payment.py
 ```
 
-## Project Structure
+---
 
-```
-agentpay/
-├── contracts/          # Solidity smart contracts
-│   ├── contracts/
-│   │   ├── PolicyRegistry.sol
-│   │   └── AgentVault.sol
-│   ├── test/
-│   └── scripts/
-├── backend/            # FastAPI backend + Python SDK
-│   ├── main.py
-│   ├── agent.py
-│   ├── agent_demo.py
-│   └── sdk/
-│       └── agentpay_client.py
-└── frontend/           # Next.js dashboard
-    └── app/
-        ├── page.tsx
-        ├── dashboard/
-        └── demo/
-```
+## Contract Addresses (Polygon Amoy Testnet)
+
+| Contract | Address | Verified |
+|----------|---------|----------|
+| AgentVault | [0x522996599e987d03cc9f07e77c3c11a3C23dE225](https://amoy.polygonscan.com/address/0x522996599e987d03cc9f07e77c3c11a3C23dE225#code) | ✓ |
+| PolicyRegistry | [0xB99b7B14f8EDC5cEF7eDBbd51aA42588D831def6](https://amoy.polygonscan.com/address/0xB99b7B14f8EDC5cEF7eDBbd51aA42588D831def6#code) | ✓ |
+| USDC (ERC-20) | 0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582 | Testnet Token |
+
+---
+
+## Roadmap
+
+### Phase 1: Testnet Validation (Current)
+- ✅ Core contracts deployed and verified
+- ✅ Python SDK with real on-chain execution
+- ✅ Receipt-based event decoding
+- ✅ Dashboard with transaction monitoring
+- ✅ Policy enforcement testing
+
+### Phase 2: Mainnet Preparation (Q2 2026)
+- Multi-signature policy updates
+- Gas optimization for high-frequency execution
+- Batch payment support
+- Enhanced monitoring and alerting
+- Security audit
+
+### Phase 3: Production Deployment (Q3 2026)
+- Polygon PoS mainnet deployment
+- Production SDK release
+- Integration with major AI frameworks (LangChain, AutoGPT)
+- Developer documentation and examples
+
+### Phase 4: Protocol Expansion (Q4 2026)
+- Multi-chain support (Ethereum L2s, Base, Arbitrum)
+- Dynamic policy updates via governance
+- Agent reputation scoring
+- Payment routing optimization
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Smart Contracts | Solidity 0.8.20, Hardhat, OpenZeppelin |
+| Blockchain | Polygon PoS (Amoy Testnet) |
+| Token Standard | USDC (ERC-20) |
+| Payment Protocol | x402 (emerging standard) |
+| Backend | FastAPI (Python 3.11) |
+| Agent SDK | Python, Web3.py, eth-account |
+| Frontend | Next.js 14, TypeScript, Tailwind CSS |
+| Testing | Hardhat (14 tests passing) |
+
+---
 
 ## Testing
 
-**Smart Contract Tests:**
-
+### Smart Contract Tests
 ```bash
 cd contracts
 npx hardhat test
 ```
 
-Output:
+**Output:**
 ```
   AgentPay Smart Contracts
     PolicyRegistry
@@ -185,36 +315,30 @@ Output:
   14 passing (2s)
 ```
 
-## Security Considerations
-
-1. **Smart Contract Layer**: All financial logic enforced on-chain
-2. **Policy Immutability**: Policies can only be updated by contract owner
-3. **Whitelist Enforcement**: Payments only to pre-approved addresses
-4. **Daily Caps**: Automatic reset every 24 hours
-5. **Emergency Pause**: Owner can pause any agent instantly
-6. **Audit Trail**: All transactions logged via events
-
-## Future Roadmap
-
-- [ ] Multi-chain support (Ethereum L2s, Base, Arbitrum)
-- [ ] Dynamic policy updates via governance
-- [ ] Agent reputation scoring
-- [ ] Batch payment optimization
-- [ ] Integration with major AI frameworks
-- [ ] Mainnet deployment
+---
 
 ## Contributing
 
-Contributions welcome! Please open an issue or PR.
+AgentPay is early infrastructure. Contributions focused on stability, security, and production readiness are welcome.
+
+**Priority areas:**
+- Gas optimization
+- Security hardening
+- SDK improvements
+- Documentation
+
+Open an issue or PR on GitHub.
+
+---
 
 ## License
 
 MIT
 
+---
+
 ## Contact
 
 Built for Polygon Hackathon 2025
 
----
-
-**AgentPay** — Autonomous payments for autonomous agents.
+**AgentPay** — Foundational payment infrastructure for autonomous agents on Polygon.

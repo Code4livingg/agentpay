@@ -13,7 +13,7 @@ const USDC_ABI = [
     "stateMutability": "view",
     "type": "function"
   }
-];
+] as const;
 
 export default function ConnectButton() {
   const { address, isConnected } = useAccount();
@@ -21,10 +21,10 @@ export default function ConnectButton() {
   const { disconnect } = useDisconnect();
 
   const { data: usdcBalance } = useReadContract({
-    address: USDC_ADDRESS,
+    address: USDC_ADDRESS as `0x${string}`,
     abi: USDC_ABI,
     functionName: 'balanceOf',
-    args: [address],
+    args: address ? [address] : undefined,
     query: { enabled: !!address }
   });
 
@@ -36,7 +36,7 @@ export default function ConnectButton() {
             {address?.slice(0, 6)}...{address?.slice(-4)}
           </div>
           <div className="text-xs text-purple-400">
-            {Number(formatUnits(usdcBalance || 0n, 6)).toFixed(2)} USDC
+            {typeof usdcBalance === 'bigint' ? Number(formatUnits(usdcBalance, 6)).toFixed(2) : '0.00'} USDC
           </div>
         </div>
         <button

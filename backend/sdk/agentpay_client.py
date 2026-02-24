@@ -32,6 +32,7 @@ MOCK_MODE = os.getenv("MOCK_PAYMENT", "false").lower() == "true"
 
 # Validate required environment variables (skip in mock mode)
 if not MOCK_MODE:
+    # Validate required environment variables (skip in mock mode)
     if not ALCHEMY_RPC:
         raise ValueError("ALCHEMY_RPC not found in environment variables")
     if not PRIVATE_KEY:
@@ -162,10 +163,13 @@ async def call_paid_endpoint(agent_id: str, endpoint: str) -> dict:
         tx_hash_hex = tx_hash.hex()
         
         # Wait for receipt
-        receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+        try:
+            receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+        except Exception as e:
+            raise Exception(f"Transaction timeout or RPC error: {str(e)}")
         
         if receipt['status'] == 0:
-            raise Exception("On-chain payment failed")
+            raise Exception("On-chain payment transaction reverted - policy check failed or insufficient balance")
         
         print(f"[4] Transaction confirmed: {tx_hash_hex}")
         

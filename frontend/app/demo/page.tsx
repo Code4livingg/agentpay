@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import ConnectButton from '@/components/ConnectButton';
+import LogoSVG from '@/components/LogoSVG';
 
 export default function Demo() {
   const [logs, setLogs] = useState<string[]>([]);
@@ -57,10 +58,7 @@ export default function Demo() {
       {/* Nav */}
       <nav className="flex justify-between items-center px-8 py-5 border-b border-gray-900">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-purple-600 rounded-lg flex items-center justify-center text-xs font-bold">
-            A
-          </div>
-          <span className="font-semibold">AgentPay</span>
+          <LogoSVG variant="mark" width={36} height={36} />
         </div>
         <div className="flex items-center gap-6">
           <Link href="/dashboard" className="text-sm text-gray-400 hover:text-white transition">

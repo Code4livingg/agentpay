@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import ConnectButton from '@/components/ConnectButton';
+import LogoSVG from '@/components/LogoSVG';
 
 interface Transaction {
   id: number;
@@ -38,29 +39,26 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-gray-950 text-white">
+    <main className="min-h-screen text-white" style={{ backgroundColor: '#0F1115' }}>
       {/* Nav */}
-      <nav className="flex justify-between items-center px-8 py-5 border-b border-gray-900">
+      <nav className="flex justify-between items-center px-8 py-5" style={{ borderBottom: '1px solid #1F2329' }}>
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-purple-600 rounded-lg flex items-center justify-center text-xs font-bold">
-            A
-          </div>
-          <span className="font-semibold">AgentPay</span>
+          <LogoSVG variant="mark" width={36} height={36} />
         </div>
         <div className="flex items-center gap-6">
-          <Link href="/dashboard" className="text-sm text-gray-400 hover:text-white transition">
+          <Link href="/dashboard" className="text-sm hover:text-white transition" style={{ color: '#A1A8B3' }}>
             Dashboard
           </Link>
-          <Link href="/demo" className="text-sm text-gray-400 hover:text-white transition">
+          <Link href="/demo" className="text-sm hover:text-white transition" style={{ color: '#A1A8B3' }}>
             Demo
           </Link>
-          <Link href="/docs" className="text-sm text-gray-400 hover:text-white transition">
+          <Link href="/docs" className="text-sm hover:text-white transition" style={{ color: '#A1A8B3' }}>
             Docs
           </Link>
         </div>
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-xs bg-purple-950 border border-purple-800 text-purple-300 px-3 py-1.5 rounded-full">
-            <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse"></div>
+          <div className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-full" style={{ backgroundColor: '#1a2332', border: '1px solid #2F6BFF', color: '#4A7FFF' }}>
+            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#2F6BFF' }}></div>
             Polygon Amoy Testnet
           </div>
           <ConnectButton />
@@ -72,42 +70,43 @@ export default function Dashboard() {
           <div>
             <h1 className="text-3xl font-bold">Agent Dashboard</h1>
           </div>
-          <Link href="/" className="text-gray-400 hover:text-white text-sm">
+          <Link href="/" className="hover:text-white text-sm" style={{ color: '#A1A8B3' }}>
             ← Back
           </Link>
         </div>
 
         <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="bg-gray-900 rounded-xl p-5 border border-gray-800">
-            <div className="text-gray-400 text-sm mb-1">Agent ID</div>
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#16181D', border: '1px solid #1F2329' }}>
+            <div className="text-sm mb-1" style={{ color: '#A1A8B3' }}>Agent ID</div>
             <div className="font-mono font-semibold">weather_agent</div>
             {isPaused ? (
-              <div className="mt-2 text-xs text-red-400">🔴 Paused</div>
+              <div className="mt-2 text-xs" style={{ color: '#ef4444' }}>🔴 Execution Paused</div>
             ) : (
-              <div className="mt-2 text-xs text-green-400">🟢 Active</div>
+              <div className="mt-2 text-xs" style={{ color: '#10b981' }}>🟢 Execution Active</div>
             )}
           </div>
 
-          <div className="bg-gray-900 rounded-xl p-5 border border-gray-800">
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#16181D', border: '1px solid #1F2329' }}>
             <div className="flex justify-between items-center mb-1">
-              <div className="text-gray-400 text-sm">Policy</div>
+              <div className="text-sm" style={{ color: '#A1A8B3' }}>Execution Policy</div>
               <button 
                 onClick={() => setShowEditPolicy(true)} 
-                className="text-xs text-purple-400 hover:underline"
+                className="text-xs hover:underline"
+                style={{ color: '#2F6BFF' }}
               >
                 Edit Policy
               </button>
             </div>
             <div className="font-semibold">Max $1.00 / tx</div>
-            <div className="text-sm text-gray-400">Daily cap: $5.00</div>
+            <div className="text-sm" style={{ color: '#A1A8B3' }}>Daily cap: $5.00</div>
           </div>
 
-          <div className="bg-gray-900 rounded-xl p-5 border border-gray-800">
-            <div className="text-gray-400 text-sm mb-1">Contracts</div>
-            <div className="text-xs font-mono text-purple-400 truncate">
+          <div className="rounded-xl p-5" style={{ backgroundColor: '#16181D', border: '1px solid #1F2329' }}>
+            <div className="text-sm mb-1" style={{ color: '#A1A8B3' }}>Contracts</div>
+            <div className="text-xs font-mono truncate" style={{ color: '#2F6BFF' }}>
               AgentVault: {process.env.NEXT_PUBLIC_AGENT_VAULT?.slice(0, 10)}...
             </div>
-            <div className="text-xs font-mono text-purple-400 truncate">
+            <div className="text-xs font-mono truncate" style={{ color: '#2F6BFF' }}>
               USDC (ERC-20, Amoy Testnet)
             </div>
             <div className="mt-2">
@@ -115,7 +114,8 @@ export default function Dashboard() {
                 href="https://amoy.polygonscan.com/address/0x522996599e987d03cc9f07e77c3c11a3C23dE225#code" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-xs text-purple-400 hover:underline"
+                className="text-xs hover:underline"
+                style={{ color: '#2F6BFF' }}
               >
                 View on Polygonscan ↗
               </a>
@@ -126,44 +126,54 @@ export default function Dashboard() {
         <div className="flex justify-end gap-3 mb-6">
           <button 
             onClick={() => setShowFundVault(true)} 
-            className="flex items-center gap-2 bg-purple-950 border border-purple-800 hover:border-purple-600 text-purple-300 transition px-4 py-2 rounded-lg text-sm"
+            className="flex items-center gap-2 transition px-4 py-2 rounded-lg text-sm"
+            style={{ backgroundColor: '#1a2332', border: '1px solid #2F6BFF', color: '#4A7FFF' }}
+            onMouseEnter={(e) => e.currentTarget.style.borderColor = '#4A7FFF'}
+            onMouseLeave={(e) => e.currentTarget.style.borderColor = '#2F6BFF'}
           >
             + Fund Vault
           </button>
           <button 
             onClick={() => setIsPaused(!isPaused)}
-            className={`flex items-center gap-2 border transition px-4 py-2 rounded-lg text-sm ${
-              isPaused 
-                ? 'bg-red-950 border-red-800 hover:border-red-600 text-red-300' 
-                : 'bg-gray-900 border-gray-800 hover:border-red-700 hover:text-red-400 text-gray-400'
-            }`}
+            className="flex items-center gap-2 transition px-4 py-2 rounded-lg text-sm"
+            style={isPaused 
+              ? { backgroundColor: '#3a1a1a', border: '1px solid #ef4444', color: '#fca5a5' }
+              : { backgroundColor: '#16181D', border: '1px solid #1F2329', color: '#A1A8B3' }
+            }
+            onMouseEnter={(e) => {
+              if (!isPaused) e.currentTarget.style.borderColor = '#ef4444';
+            }}
+            onMouseLeave={(e) => {
+              if (!isPaused) e.currentTarget.style.borderColor = '#1F2329';
+            }}
           >
-            <span className={`w-2 h-2 rounded-full inline-block ${isPaused ? 'bg-red-400' : 'bg-green-400'}`}></span>
-            {isPaused ? 'Agent Paused — Click to Resume' : 'Agent Active — Click to Pause'}
+            <span className={`w-2 h-2 rounded-full inline-block`} style={{ backgroundColor: isPaused ? '#ef4444' : '#10b981' }}></span>
+            {isPaused ? 'Execution Paused — Click to Resume' : 'Execution Active — Click to Pause'}
           </button>
         </div>
 
-        <div className="bg-gray-900 rounded-xl border border-gray-800">
-          <div className="p-5 border-b border-gray-800 flex justify-between items-center">
-            <h2 className="font-semibold">Transaction Feed</h2>
+        <div className="rounded-xl" style={{ backgroundColor: '#16181D', border: '1px solid #1F2329' }}>
+          <div className="p-5 flex justify-between items-center" style={{ borderBottom: '1px solid #1F2329' }}>
+            <h2 className="font-semibold">Execution Feed</h2>
             <button
               onClick={() => window.location.reload()}
-              className="text-xs text-gray-400 hover:text-white"
+              className="text-xs hover:text-white"
+              style={{ color: '#A1A8B3' }}
             >
               Refresh
             </button>
           </div>
 
           {loading ? (
-            <div className="p-8 text-center text-gray-500">Loading...</div>
+            <div className="p-8 text-center" style={{ color: '#6B7280' }}>Loading...</div>
           ) : transactions.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
-              No transactions yet. Run the demo to see payments appear here.
+            <div className="p-8 text-center" style={{ color: '#6B7280' }}>
+              No executions yet. Run the demo to see policy-bound transactions appear here.
             </div>
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-gray-500 text-xs border-b border-gray-800">
+                <tr className="text-xs" style={{ color: '#6B7280', borderBottom: '1px solid #1F2329' }}>
                   <th className="text-left p-4">Time</th>
                   <th className="text-left p-4">Agent</th>
                   <th className="text-left p-4">Amount</th>
@@ -175,31 +185,34 @@ export default function Dashboard() {
               </thead>
               <tbody>
                 {transactions.map(tx => (
-                  <tr key={tx.id} className="border-b border-gray-800 hover:bg-gray-800">
-                    <td className="p-4 text-gray-400">
+                  <tr key={tx.id} style={{ borderBottom: '1px solid #1F2329' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#16181D'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                    <td className="p-4" style={{ color: '#A1A8B3' }}>
                       {new Date(tx.timestamp * 1000).toLocaleTimeString()}
                     </td>
                     <td className="p-4 font-mono">{tx.agent_id}</td>
                     <td className="p-4">${tx.amount_usdc} USDC</td>
-                    <td className="p-4 font-mono text-purple-400">
+                    <td className="p-4 font-mono">
                       <a 
                         href={tx.tx_url} 
                         target="_blank" 
                         rel="noopener noreferrer" 
                         className="hover:underline"
+                        style={{ color: '#2F6BFF' }}
                       >
                         {tx.tx_hash?.slice(0, 18)}...
                       </a>
                     </td>
-                    <td className="p-4 text-gray-400">{tx.block_number || '—'}</td>
-                    <td className="p-4 text-gray-400">{tx.gas_used ? tx.gas_used.toLocaleString() : '—'}</td>
+                    <td className="p-4" style={{ color: '#A1A8B3' }}>{tx.block_number || '—'}</td>
+                    <td className="p-4" style={{ color: '#A1A8B3' }}>{tx.gas_used ? tx.gas_used.toLocaleString() : '—'}</td>
                     <td className="p-4">
                       <span
-                        className={`px-2 py-1 rounded text-xs ${
-                          tx.status === 'success'
-                            ? 'bg-green-900 text-green-400'
-                            : 'bg-red-900 text-red-400'
-                        }`}
+                        className="px-2 py-1 rounded text-xs"
+                        style={tx.status === 'success'
+                          ? { backgroundColor: '#1a3a2e', color: '#10b981' }
+                          : { backgroundColor: '#3a1a1a', color: '#ef4444' }
+                        }
                       >
                         {tx.status}
                       </span>
@@ -213,49 +226,61 @@ export default function Dashboard() {
       </div>
 
       {showEditPolicy && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-gray-950 border border-gray-800 rounded-2xl p-8 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-6">Edit Agent Policy</h2>
+        <div className="fixed inset-0 flex items-center justify-center z-50" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
+          <div className="rounded-2xl p-8 w-full max-w-md" style={{ backgroundColor: '#0F1115', border: '1px solid #1F2329' }}>
+            <h2 className="text-xl font-bold mb-6">Edit Execution Policy</h2>
             
             <div className="space-y-4 mb-6">
               <div>
-                <label className="text-sm text-gray-400 mb-2 block">Max per transaction (USDC)</label>
+                <label className="text-sm mb-2 block" style={{ color: '#A1A8B3' }}>Max per transaction (USDC)</label>
                 <input
                   type="number"
                   value={maxPerTx}
                   onChange={e => setMaxPerTx(e.target.value)}
-                  className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-purple-500 outline-none"
+                  className="w-full rounded-lg px-4 py-2 text-white outline-none"
+                  style={{ backgroundColor: '#16181D', border: '1px solid #1F2329' }}
+                  onFocus={(e) => e.currentTarget.style.borderColor = '#2F6BFF'}
+                  onBlur={(e) => e.currentTarget.style.borderColor = '#1F2329'}
                 />
               </div>
 
               <div>
-                <label className="text-sm text-gray-400 mb-2 block">Daily spending cap (USDC)</label>
+                <label className="text-sm mb-2 block" style={{ color: '#A1A8B3' }}>Daily spending cap (USDC)</label>
                 <input
                   type="number"
                   value={dailyCap}
                   onChange={e => setDailyCap(e.target.value)}
-                  className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-purple-500 outline-none"
+                  className="w-full rounded-lg px-4 py-2 text-white outline-none"
+                  style={{ backgroundColor: '#16181D', border: '1px solid #1F2329' }}
+                  onFocus={(e) => e.currentTarget.style.borderColor = '#2F6BFF'}
+                  onBlur={(e) => e.currentTarget.style.borderColor = '#1F2329'}
                 />
               </div>
 
               <div>
-                <label className="text-sm text-gray-400 mb-2 block">Whitelisted recipient</label>
+                <label className="text-sm mb-2 block" style={{ color: '#A1A8B3' }}>Whitelisted recipient</label>
                 <input
                   type="text"
                   defaultValue="0x61254AEcF84eEdb890f07dD29f7F3cd3b8Eb2CBe"
-                  className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white font-mono text-sm focus:border-purple-500 outline-none"
+                  className="w-full rounded-lg px-4 py-2 text-white font-mono text-sm outline-none"
+                  style={{ backgroundColor: '#16181D', border: '1px solid #1F2329' }}
+                  onFocus={(e) => e.currentTarget.style.borderColor = '#2F6BFF'}
+                  onBlur={(e) => e.currentTarget.style.borderColor = '#1F2329'}
                 />
               </div>
             </div>
 
-            <div className="text-xs text-gray-600 mb-6 p-3 bg-gray-900 rounded-lg">
+            <div className="text-xs mb-6 p-3 rounded-lg" style={{ color: '#6B7280', backgroundColor: '#16181D' }}>
               ⚠️ Policy changes require an on-chain transaction signed by the agent owner wallet.
             </div>
 
             <div className="flex gap-3">
               <button
                 onClick={() => setShowEditPolicy(false)}
-                className="flex-1 border border-gray-700 hover:border-gray-600 px-4 py-2 rounded-lg text-sm transition"
+                className="flex-1 px-4 py-2 rounded-lg text-sm transition"
+                style={{ border: '1px solid #1F2329' }}
+                onMouseEnter={(e) => e.currentTarget.style.borderColor = '#2F6BFF'}
+                onMouseLeave={(e) => e.currentTarget.style.borderColor = '#1F2329'}
               >
                 Cancel
               </button>
@@ -264,7 +289,10 @@ export default function Dashboard() {
                   alert('Connect wallet to sign policy update transaction');
                   setShowEditPolicy(false);
                 }}
-                className="flex-1 bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-lg text-sm font-semibold transition"
+                className="flex-1 px-4 py-2 rounded-lg text-sm font-semibold transition"
+                style={{ backgroundColor: '#2F6BFF', color: 'white' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4A7FFF'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2F6BFF'}
               >
                 Update Policy
               </button>
@@ -274,46 +302,52 @@ export default function Dashboard() {
       )}
 
       {showFundVault && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-gray-950 border border-gray-800 rounded-2xl p-8 w-full max-w-md">
+        <div className="fixed inset-0 flex items-center justify-center z-50" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
+          <div className="rounded-2xl p-8 w-full max-w-md" style={{ backgroundColor: '#0F1115', border: '1px solid #1F2329' }}>
             <h2 className="text-xl font-bold mb-2">Fund Agent Vault</h2>
-            <p className="text-gray-500 text-sm mb-6">
+            <p className="text-sm mb-6" style={{ color: '#6B7280' }}>
               Deposit USDC into the AgentVault contract. The agent will use this balance to pay for API calls within policy limits.
             </p>
 
             <div className="mb-4">
-              <label className="text-sm text-gray-400 mb-2 block">Amount (USDC)</label>
+              <label className="text-sm mb-2 block" style={{ color: '#A1A8B3' }}>Amount (USDC)</label>
               <input
                 type="number"
                 value={depositAmount}
                 onChange={e => setDepositAmount(e.target.value)}
-                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-purple-500 outline-none"
+                className="w-full rounded-lg px-4 py-2 text-white outline-none"
+                style={{ backgroundColor: '#16181D', border: '1px solid #1F2329' }}
+                onFocus={(e) => e.currentTarget.style.borderColor = '#2F6BFF'}
+                onBlur={(e) => e.currentTarget.style.borderColor = '#1F2329'}
               />
             </div>
 
-            <div className="bg-gray-900 rounded-lg p-4 mb-6 space-y-2 text-sm">
+            <div className="rounded-lg p-4 mb-6 space-y-2 text-sm" style={{ backgroundColor: '#16181D' }}>
               <div className="flex justify-between">
-                <span className="text-gray-500">Depositing to</span>
-                <span className="font-mono text-xs text-purple-400">AgentVault: 0x5229...E225</span>
+                <span style={{ color: '#6B7280' }}>Depositing to</span>
+                <span className="font-mono text-xs" style={{ color: '#2F6BFF' }}>AgentVault: 0x5229...E225</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Network</span>
-                <span className="text-gray-300">Polygon Amoy Testnet</span>
+                <span style={{ color: '#6B7280' }}>Network</span>
+                <span style={{ color: '#A1A8B3' }}>Polygon Amoy Testnet</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Token</span>
-                <span className="text-gray-300">USDC (ERC-20)</span>
+                <span style={{ color: '#6B7280' }}>Token</span>
+                <span style={{ color: '#A1A8B3' }}>USDC (ERC-20)</span>
               </div>
             </div>
 
-            <div className="text-xs text-gray-600 mb-6 p-3 bg-gray-900 rounded-lg">
+            <div className="text-xs mb-6 p-3 rounded-lg" style={{ color: '#6B7280', backgroundColor: '#16181D' }}>
               Two transactions required: (1) Approve USDC spend, (2) Deposit into vault.
             </div>
 
             <div className="flex gap-3">
               <button
                 onClick={() => setShowFundVault(false)}
-                className="flex-1 border border-gray-700 px-4 py-2 rounded-lg text-sm"
+                className="flex-1 px-4 py-2 rounded-lg text-sm transition"
+                style={{ border: '1px solid #1F2329' }}
+                onMouseEnter={(e) => e.currentTarget.style.borderColor = '#2F6BFF'}
+                onMouseLeave={(e) => e.currentTarget.style.borderColor = '#1F2329'}
               >
                 Cancel
               </button>
@@ -322,7 +356,10 @@ export default function Dashboard() {
                   alert('Connect wallet to approve and deposit USDC');
                   setShowFundVault(false);
                 }}
-                className="flex-1 bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-lg text-sm font-semibold"
+                className="flex-1 px-4 py-2 rounded-lg text-sm font-semibold transition"
+                style={{ backgroundColor: '#2F6BFF', color: 'white' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4A7FFF'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2F6BFF'}
               >
                 Approve & Deposit
               </button>

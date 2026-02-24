@@ -2,16 +2,14 @@
 
 import Link from 'next/link';
 import ConnectButton from '@/components/ConnectButton';
+import LogoSVG from '@/components/LogoSVG';
 
 export default function Docs() {
   return (
     <main className="min-h-screen bg-black text-white">
       <nav className="flex justify-between items-center px-8 py-5 border-b border-gray-900">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-purple-600 rounded-lg flex items-center justify-center text-xs font-bold">
-            A
-          </div>
-          <span className="font-semibold">AgentPay</span>
+          <LogoSVG variant="mark" width={36} height={36} />
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 text-xs bg-purple-950 border border-purple-800 text-purple-300 px-3 py-1.5 rounded-full">

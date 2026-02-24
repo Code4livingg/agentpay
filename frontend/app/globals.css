@@ -1,8 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* AgentPay Brand Palette */
+  --primary-bg: #0F1115;
+  --primary-accent: #2F6BFF;
+  --accent-hover: #4A7FFF;
+  --highlight-glow: #00D1FF;
+  --text-primary: #E6E9EF;
+  --text-muted: #A1A8B3;
+  --border-subtle: #1F2329;
+  
+  --background: #0F1115;
+  --foreground: #E6E9EF;
 }
 
 @theme inline {
@@ -12,15 +21,8 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--primary-bg);
+  color: var(--text-primary);
   font-family: Arial, Helvetica, sans-serif;
 }

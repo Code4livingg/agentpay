@@ -9,18 +9,26 @@ import time
 import hashlib
 from datetime import datetime
 from dotenv import load_dotenv
+import sys
 
 # Import contract instance from SDK
 from sdk.agentpay_client import agent_vault, MOCK_MODE, DEPLOYMENT_BLOCK
 
 load_dotenv()
 
+# Validate critical environment variables at startup
+REQUIRED_ENV_VARS = ["ALCHEMY_RPC", "PRIVATE_KEY", "AGENT_VAULT_ADDRESS", "USDC_ADDRESS"]
+missing_vars = [var for var in REQUIRED_ENV_VARS if not os.getenv(var)]
+if missing_vars and not MOCK_MODE:
+    print(f"ERROR: Missing required environment variables: {', '.join(missing_vars)}")
+    sys.exit(1)
+
 app = FastAPI(title="AgentPay API")
 
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Configure for production deployment
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -109,33 +117,38 @@ async def get_weather(x_payment_proof: Optional[str] = Header(None)):
                 receipt = w3.eth.get_transaction_receipt(x_payment_proof)
                 block_number = receipt['blockNumber']
                 gas_used = receipt['gasUsed']
-            except:
+            except Exception as e:
+                # Log error but continue - receipt fetch is non-critical
                 pass
     
     # Save transaction to database when payment proof is received
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    created_at = datetime.utcnow().isoformat()
-    timestamp = int(time.time())
-    
-    cursor.execute("""
-        INSERT INTO transactions 
-        (agent_id, recipient, amount_usdc, tx_hash, status, timestamp, created_at, block_number, gas_used)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        agent_id,
-        "0x61254AEcF84eEdb890f07dD29f7F3cd3b8Eb2CBe",
-        0.001,
-        tx_hash,
-        "success",
-        timestamp,
-        created_at,
-        block_number,
-        gas_used
-    ))
-    
-    conn.commit()
-    conn.close()
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        created_at = datetime.utcnow().isoformat()
+        timestamp = int(time.time())
+        
+        cursor.execute("""
+            INSERT INTO transactions 
+            (agent_id, recipient, amount_usdc, tx_hash, status, timestamp, created_at, block_number, gas_used)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            agent_id,
+            "0x61254AEcF84eEdb890f07dD29f7F3cd3b8Eb2CBe",
+            0.001,
+            tx_hash,
+            "success",
+            timestamp,
+            created_at,
+            block_number,
+            gas_used
+        ))
+        
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        # Log error but don't fail the request
+        print(f"Database write error: {str(e)}")
     
     return {
         "city": "Bangalore",
