@@ -47,6 +47,18 @@ def init_db():
             created_at TEXT
         )
     """)
+    
+    # Add block_number and gas_used columns if they don't exist
+    try:
+        cursor.execute("ALTER TABLE transactions ADD COLUMN block_number INTEGER DEFAULT 0")
+    except:
+        pass
+    
+    try:
+        cursor.execute("ALTER TABLE transactions ADD COLUMN gas_used INTEGER DEFAULT 0")
+    except:
+        pass
+    
     conn.commit()
     conn.close()
 
@@ -84,8 +96,21 @@ async def get_weather(x_payment_proof: Optional[str] = Header(None)):
     # Generate realistic hash if mock
     agent_id = "weather_agent"
     tx_hash = x_payment_proof
+    block_number = 0
+    gas_used = 0
+    
     if tx_hash.startswith("0xMOCK_TX_"):
         tx_hash = "0x" + hashlib.sha256(f"{agent_id}{time.time()}".encode()).hexdigest()
+    else:
+        # If real transaction, fetch block_number and gas_used from receipt
+        if not MOCK_MODE and agent_vault is not None:
+            try:
+                from sdk.agentpay_client import w3
+                receipt = w3.eth.get_transaction_receipt(x_payment_proof)
+                block_number = receipt['blockNumber']
+                gas_used = receipt['gasUsed']
+            except:
+                pass
     
     # Save transaction to database when payment proof is received
     conn = sqlite3.connect(DB_PATH)
@@ -95,8 +120,8 @@ async def get_weather(x_payment_proof: Optional[str] = Header(None)):
     
     cursor.execute("""
         INSERT INTO transactions 
-        (agent_id, recipient, amount_usdc, tx_hash, status, timestamp, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        (agent_id, recipient, amount_usdc, tx_hash, status, timestamp, created_at, block_number, gas_used)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         agent_id,
         "0x61254AEcF84eEdb890f07dD29f7F3cd3b8Eb2CBe",
@@ -104,7 +129,9 @@ async def get_weather(x_payment_proof: Optional[str] = Header(None)):
         tx_hash,
         "success",
         timestamp,
-        created_at
+        created_at,
+        block_number,
+        gas_used
     ))
     
     conn.commit()
@@ -139,8 +166,21 @@ async def get_data_feed(x_payment_proof: Optional[str] = Header(None)):
     # Generate realistic hash if mock
     agent_id = "weather_agent"
     tx_hash = x_payment_proof
+    block_number = 0
+    gas_used = 0
+    
     if tx_hash.startswith("0xMOCK_TX_"):
         tx_hash = "0x" + hashlib.sha256(f"{agent_id}{time.time()}".encode()).hexdigest()
+    else:
+        # If real transaction, fetch block_number and gas_used from receipt
+        if not MOCK_MODE and agent_vault is not None:
+            try:
+                from sdk.agentpay_client import w3
+                receipt = w3.eth.get_transaction_receipt(x_payment_proof)
+                block_number = receipt['blockNumber']
+                gas_used = receipt['gasUsed']
+            except:
+                pass
     
     # Save transaction to database when payment proof is received
     conn = sqlite3.connect(DB_PATH)
@@ -150,8 +190,8 @@ async def get_data_feed(x_payment_proof: Optional[str] = Header(None)):
     
     cursor.execute("""
         INSERT INTO transactions 
-        (agent_id, recipient, amount_usdc, tx_hash, status, timestamp, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        (agent_id, recipient, amount_usdc, tx_hash, status, timestamp, created_at, block_number, gas_used)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         agent_id,
         "0x61254AEcF84eEdb890f07dD29f7F3cd3b8Eb2CBe",
@@ -159,7 +199,9 @@ async def get_data_feed(x_payment_proof: Optional[str] = Header(None)):
         tx_hash,
         "success",
         timestamp,
-        created_at
+        created_at,
+        block_number,
+        gas_used
     ))
     
     conn.commit()
@@ -201,45 +243,32 @@ async def get_transactions():
 
 @app.get("/transactions/onchain")
 async def get_onchain_transactions():
-    """Get on-chain transactions from AgentVault contract events"""
-    if MOCK_MODE or agent_vault is None:
-        return {"error": "On-chain queries not available in mock mode", "transactions": []}
+    """Get on-chain transactions from SQLite database"""
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
     
-    try:
-        from sdk.agentpay_client import w3
-        
-        # Read all tx_hash values from SQLite
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute("SELECT DISTINCT tx_hash FROM transactions WHERE tx_hash NOT LIKE '0xMOCK_TX_%'")
-        tx_hashes = [row[0] for row in cursor.fetchall()]
-        conn.close()
-        
-        transactions = []
-        for tx_hash in tx_hashes:
-            try:
-                # Get transaction receipt
-                receipt = w3.eth.get_transaction_receipt(tx_hash)
-                
-                # Process receipt to extract PaymentExecuted events
-                events = agent_vault.events.PaymentExecuted().process_receipt(receipt)
-                
-                for event in events:
-                    tx = {
-                        "tx_hash": event['transactionHash'].hex(),
-                        "block_number": event['blockNumber'],
-                        "agent_id": event['args']['agentId'].hex(),
-                        "recipient": event['args']['recipient'],
-                        "amount": event['args']['amount'] / 10**6,  # Convert from USDC units to float
-                    }
-                    transactions.append(tx)
-            except Exception as e:
-                # Skip transactions that fail to decode
-                continue
-        
-        return {"transactions": transactions}
-    except Exception as e:
-        return {"error": str(e), "transactions": []}
+    cursor.execute("""
+        SELECT * FROM transactions 
+        ORDER BY timestamp DESC 
+        LIMIT 50
+    """)
+    
+    rows = cursor.fetchall()
+    conn.close()
+    
+    transactions = []
+    for row in rows:
+        tx = dict(row)
+        tx['tx_url'] = f"https://amoy.polygonscan.com/tx/{tx['tx_hash']}"
+        # Ensure block_number and gas_used have default values if not in DB
+        if 'block_number' not in tx or tx['block_number'] is None:
+            tx['block_number'] = 0
+        if 'gas_used' not in tx or tx['gas_used'] is None:
+            tx['gas_used'] = 0
+        transactions.append(tx)
+    
+    return {"transactions": transactions}
 
 @app.post("/transactions")
 async def create_transaction(transaction: Transaction):
@@ -248,11 +277,23 @@ async def create_transaction(transaction: Transaction):
     cursor = conn.cursor()
     
     created_at = datetime.utcnow().isoformat()
+    block_number = 0
+    gas_used = 0
+    
+    # If real transaction, fetch block_number and gas_used from receipt
+    if not transaction.tx_hash.startswith("0xMOCK_TX_") and not MOCK_MODE and agent_vault is not None:
+        try:
+            from sdk.agentpay_client import w3
+            receipt = w3.eth.get_transaction_receipt(transaction.tx_hash)
+            block_number = receipt['blockNumber']
+            gas_used = receipt['gasUsed']
+        except:
+            pass
     
     cursor.execute("""
         INSERT INTO transactions 
-        (agent_id, recipient, amount_usdc, tx_hash, status, block_reason, timestamp, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        (agent_id, recipient, amount_usdc, tx_hash, status, block_reason, timestamp, created_at, block_number, gas_used)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         transaction.agent_id,
         transaction.recipient,
@@ -261,7 +302,9 @@ async def create_transaction(transaction: Transaction):
         transaction.status,
         transaction.block_reason,
         transaction.timestamp,
-        created_at
+        created_at,
+        block_number,
+        gas_used
     ))
     
     conn.commit()

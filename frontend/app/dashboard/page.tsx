@@ -13,6 +13,8 @@ interface Transaction {
   status: string;
   timestamp: number;
   tx_url?: string;
+  block_number?: number;
+  gas_used?: number;
 }
 
 export default function Dashboard() {
@@ -26,7 +28,7 @@ export default function Dashboard() {
   const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/transactions`)
+    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/transactions/onchain`)
       .then(r => r.json())
       .then(data => {
         setTransactions(data.transactions);
@@ -166,6 +168,8 @@ export default function Dashboard() {
                   <th className="text-left p-4">Agent</th>
                   <th className="text-left p-4">Amount</th>
                   <th className="text-left p-4">Tx Hash</th>
+                  <th className="text-left p-4">Block</th>
+                  <th className="text-left p-4">Gas Used</th>
                   <th className="text-left p-4">Status</th>
                 </tr>
               </thead>
@@ -187,6 +191,8 @@ export default function Dashboard() {
                         {tx.tx_hash?.slice(0, 18)}...
                       </a>
                     </td>
+                    <td className="p-4 text-gray-400">{tx.block_number || '—'}</td>
+                    <td className="p-4 text-gray-400">{tx.gas_used ? tx.gas_used.toLocaleString() : '—'}</td>
                     <td className="p-4">
                       <span
                         className={`px-2 py-1 rounded text-xs ${

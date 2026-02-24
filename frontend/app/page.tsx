@@ -41,33 +41,43 @@ export default function Home() {
         </div>
 
         <h1 className="text-6xl font-bold leading-tight mb-6">
-          Payments for<br />
-          <span className="text-purple-500">AI Agents</span>
+          Deterministic Payments<br />
+          for <span className="text-purple-500">Autonomous Agents</span>
         </h1>
 
         <p className="text-xl text-gray-400 max-w-xl mb-4">
-          Policy-bound USDC micro-payments on Polygon. Humans set the rules once. 
-          Smart contract enforces them on-chain.
+          AgentPay enables programmable, verifiable on-chain USDC payments for AI systems — without custodial risk.
+        </p>
+
+        <p className="text-gray-600 max-w-lg mb-4">
+          Purpose-built for Polygon's low-latency, low-cost execution environment — making it suitable for machine-scale transaction flows.
         </p>
 
         <p className="text-gray-600 max-w-lg mb-10">
-          Agents do not initiate arbitrary payments — payments occur only when a 
-          predefined API call requires it AND passes all policy checks.
+          AgentPay does not abstract away blockchain execution. It formalizes and verifies it for autonomous systems.
         </p>
 
-        <div className="flex gap-3 mb-20">
+        <div className="flex gap-3 mb-16">
           <Link 
             href="/dashboard" 
             className="bg-purple-600 hover:bg-purple-500 transition px-6 py-3 rounded-lg font-semibold text-sm"
           >
-            View Dashboard →
+            Launch Dashboard →
           </Link>
           <Link 
-            href="/demo" 
+            href="/docs" 
             className="bg-gray-900 hover:bg-gray-800 transition border border-gray-800 px-6 py-3 rounded-lg font-semibold text-sm"
           >
-            Run Demo Agent
+            View Architecture
           </Link>
+          <a 
+            href="https://amoy.polygonscan.com/address/0x522996599e987d03cc9f07e77c3c11a3C23dE225#code" 
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-gray-900 hover:bg-gray-800 transition border border-gray-800 px-6 py-3 rounded-lg font-semibold text-sm"
+          >
+            View Contract ↗
+          </a>
         </div>
 
         <div className="mb-16">
