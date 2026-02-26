@@ -1,12 +1,16 @@
 import asyncio
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 from sdk.agentpay_client import call_paid_endpoint
 
-load_dotenv(dotenv_path="../.env")
+backend_env = Path(__file__).resolve().parent / ".env"
+root_env = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(dotenv_path=backend_env)
+load_dotenv(dotenv_path=root_env)
 
 @tool
 async def weather_tool(city: str) -> str:

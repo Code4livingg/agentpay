@@ -2,8 +2,38 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useAccount, useWriteContract } from 'wagmi';
+import { parseUnits } from 'viem';
 import ConnectButton from '@/components/ConnectButton';
 import LogoSVG from '@/components/LogoSVG';
+
+// ── Contract addresses (Polygon Amoy testnet) ──────────────────────────────
+const VAULT_ADDRESS = (process.env.NEXT_PUBLIC_AGENT_VAULT ?? '0x522996599e987d03cc9f07e77c3c11a3C23dE225') as `0x${string}`;
+const USDC_ADDRESS = (process.env.NEXT_PUBLIC_USDC ?? '0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582') as `0x${string}`;
+
+// ── Minimal ABIs ──────────────────────────────────────────────────────────
+const ERC20_ABI = [
+  {
+    name: 'approve',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'spender', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    outputs: [{ name: '', type: 'bool' }],
+  },
+] as const;
+
+const AGENT_VAULT_ABI = [
+  {
+    name: 'deposit',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'amount', type: 'uint256' }],
+    outputs: [],
+  },
+] as const;
 
 interface Transaction {
   id: number;
@@ -19,6 +49,8 @@ interface Transaction {
 }
 
 export default function Dashboard() {
+  const { address } = useAccount();
+  const { writeContractAsync } = useWriteContract();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [showEditPolicy, setShowEditPolicy] = useState(false);
@@ -27,6 +59,62 @@ export default function Dashboard() {
   const [showFundVault, setShowFundVault] = useState(false);
   const [depositAmount, setDepositAmount] = useState('1.00');
   const [isPaused, setIsPaused] = useState(false);
+  const [depositStatus, setDepositStatus] = useState<'idle' | 'approving' | 'depositing' | 'done' | 'error'>('idle');
+
+  const handleDeposit = async () => {
+    if (!address) {
+      alert('Please connect wallet first');
+      return;
+    }
+
+    // USDC on Amoy uses 6 decimals (same as mainnet USDC)
+    const amountUnits = parseUnits(depositAmount, 6);
+
+    try {
+      // ── Step 1: Approve USDC spend ────────────────────────────────────────
+      setDepositStatus('approving');
+      console.log('[AgentPay] Step 1 – Requesting USDC approval…', {
+        token: USDC_ADDRESS,
+        spender: VAULT_ADDRESS,
+        amount: amountUnits.toString(),
+      });
+
+      const approveTxHash = await writeContractAsync({
+        address: USDC_ADDRESS,
+        abi: ERC20_ABI,
+        functionName: 'approve',
+        args: [VAULT_ADDRESS, amountUnits],
+      });
+      console.log('[AgentPay] USDC approve tx sent:', approveTxHash);
+
+      // ── Step 2: Deposit into AgentVault ──────────────────────────────────
+      setDepositStatus('depositing');
+      console.log('[AgentPay] Step 2 – Depositing into AgentVault…', {
+        vault: VAULT_ADDRESS,
+        amount: amountUnits.toString(),
+      });
+
+      const depositTxHash = await writeContractAsync({
+        address: VAULT_ADDRESS,
+        abi: AGENT_VAULT_ABI,
+        functionName: 'deposit',
+        args: [amountUnits],
+      });
+      console.log('[AgentPay] Deposit tx sent:', depositTxHash);
+
+      setDepositStatus('done');
+      setShowFundVault(false);
+      alert(`✅ Deposited ${depositAmount} USDC!\nTx: ${depositTxHash}`);
+    } catch (err: unknown) {
+      setDepositStatus('error');
+      const message = err instanceof Error ? err.message : String(err);
+      console.error('[AgentPay] Deposit failed:', err);
+      alert(`❌ Deposit failed: ${message}`);
+    } finally {
+      // Reset status after a short delay so the button reflects the last state briefly
+      setTimeout(() => setDepositStatus('idle'), 3000);
+    }
+  };
 
   useEffect(() => {
     fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/transactions/onchain`)
@@ -89,8 +177,8 @@ export default function Dashboard() {
           <div className="rounded-xl p-5" style={{ backgroundColor: '#16181D', border: '1px solid #1F2329' }}>
             <div className="flex justify-between items-center mb-1">
               <div className="text-sm" style={{ color: '#A1A8B3' }}>Execution Policy</div>
-              <button 
-                onClick={() => setShowEditPolicy(true)} 
+              <button
+                onClick={() => setShowEditPolicy(true)}
                 className="text-xs hover:underline"
                 style={{ color: '#2F6BFF' }}
               >
@@ -110,9 +198,9 @@ export default function Dashboard() {
               USDC (ERC-20, Amoy Testnet)
             </div>
             <div className="mt-2">
-              <a 
-                href="https://amoy.polygonscan.com/address/0x522996599e987d03cc9f07e77c3c11a3C23dE225#code" 
-                target="_blank" 
+              <a
+                href="https://amoy.polygonscan.com/address/0x522996599e987d03cc9f07e77c3c11a3C23dE225#code"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs hover:underline"
                 style={{ color: '#2F6BFF' }}
@@ -124,8 +212,8 @@ export default function Dashboard() {
         </div>
 
         <div className="flex justify-end gap-3 mb-6">
-          <button 
-            onClick={() => setShowFundVault(true)} 
+          <button
+            onClick={() => setShowFundVault(true)}
             className="flex items-center gap-2 transition px-4 py-2 rounded-lg text-sm"
             style={{ backgroundColor: '#1a2332', border: '1px solid #2F6BFF', color: '#4A7FFF' }}
             onMouseEnter={(e) => e.currentTarget.style.borderColor = '#4A7FFF'}
@@ -133,10 +221,10 @@ export default function Dashboard() {
           >
             + Fund Vault
           </button>
-          <button 
+          <button
             onClick={() => setIsPaused(!isPaused)}
             className="flex items-center gap-2 transition px-4 py-2 rounded-lg text-sm"
-            style={isPaused 
+            style={isPaused
               ? { backgroundColor: '#3a1a1a', border: '1px solid #ef4444', color: '#fca5a5' }
               : { backgroundColor: '#16181D', border: '1px solid #1F2329', color: '#A1A8B3' }
             }
@@ -194,10 +282,10 @@ export default function Dashboard() {
                     <td className="p-4 font-mono">{tx.agent_id}</td>
                     <td className="p-4">${tx.amount_usdc} USDC</td>
                     <td className="p-4 font-mono">
-                      <a 
-                        href={tx.tx_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
+                      <a
+                        href={tx.tx_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="hover:underline"
                         style={{ color: '#2F6BFF' }}
                       >
@@ -229,7 +317,7 @@ export default function Dashboard() {
         <div className="fixed inset-0 flex items-center justify-center z-50" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
           <div className="rounded-2xl p-8 w-full max-w-md" style={{ backgroundColor: '#0F1115', border: '1px solid #1F2329' }}>
             <h2 className="text-xl font-bold mb-6">Edit Execution Policy</h2>
-            
+
             <div className="space-y-4 mb-6">
               <div>
                 <label className="text-sm mb-2 block" style={{ color: '#A1A8B3' }}>Max per transaction (USDC)</label>
@@ -286,7 +374,11 @@ export default function Dashboard() {
               </button>
               <button
                 onClick={() => {
-                  alert('Connect wallet to sign policy update transaction');
+                  if (!address) {
+                    alert('Please connect wallet first');
+                    return;
+                  }
+                  alert(`Ready to sign policy update from ${address.slice(0, 6)}...${address.slice(-4)}`);
                   setShowEditPolicy(false);
                 }}
                 className="flex-1 px-4 py-2 rounded-lg text-sm font-semibold transition"
@@ -352,16 +444,27 @@ export default function Dashboard() {
                 Cancel
               </button>
               <button
-                onClick={() => {
-                  alert('Connect wallet to approve and deposit USDC');
-                  setShowFundVault(false);
-                }}
+                onClick={handleDeposit}
+                disabled={!address || depositStatus === 'approving' || depositStatus === 'depositing'}
                 className="flex-1 px-4 py-2 rounded-lg text-sm font-semibold transition"
-                style={{ backgroundColor: '#2F6BFF', color: 'white' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4A7FFF'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2F6BFF'}
+                style={{
+                  backgroundColor: depositStatus === 'error' ? '#7f1d1d' : '#2F6BFF',
+                  color: 'white',
+                  opacity: (!address || depositStatus === 'approving' || depositStatus === 'depositing') ? 0.6 : 1,
+                  cursor: (!address || depositStatus === 'approving' || depositStatus === 'depositing') ? 'not-allowed' : 'pointer',
+                }}
+                onMouseEnter={(e) => {
+                  if (depositStatus === 'idle') e.currentTarget.style.backgroundColor = '#4A7FFF';
+                }}
+                onMouseLeave={(e) => {
+                  if (depositStatus === 'idle') e.currentTarget.style.backgroundColor = '#2F6BFF';
+                }}
               >
-                Approve & Deposit
+                {depositStatus === 'approving' && '⏳ Approving…'}
+                {depositStatus === 'depositing' && '⏳ Depositing…'}
+                {depositStatus === 'done' && '✅ Done!'}
+                {depositStatus === 'error' && '❌ Error — Retry'}
+                {depositStatus === 'idle' && 'Approve & Deposit'}
               </button>
             </div>
           </div>
