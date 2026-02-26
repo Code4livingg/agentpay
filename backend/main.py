@@ -9,6 +9,7 @@ import sqlite3
 import asyncio
 from datetime import datetime
 from dotenv import load_dotenv
+from urllib.parse import urlparse
 from web3 import Web3
 
 # Import contract instance from SDK
@@ -226,7 +227,24 @@ class Database:
 
 
 DEFAULT_SQLITE_URL = "sqlite:///./db/transactions.db"
-DATABASE_URL = os.getenv("DATABASE_URL", DEFAULT_SQLITE_URL)
+
+
+def _resolve_database_url() -> str:
+    raw = os.getenv("DATABASE_URL")
+    if not raw:
+        return DEFAULT_SQLITE_URL
+
+    if raw.startswith(("postgres://", "postgresql://", "postgresql+asyncpg://")):
+        normalized = raw.replace("postgresql+asyncpg://", "postgresql://", 1)
+        host = urlparse(normalized).hostname
+        if os.getenv("RENDER") and host in {"localhost", "127.0.0.1", "::1"}:
+            print("[!] DATABASE_URL points to localhost on Render; falling back to SQLite.")
+            return DEFAULT_SQLITE_URL
+
+    return raw
+
+
+DATABASE_URL = _resolve_database_url()
 db = Database(DATABASE_URL)
 
 
