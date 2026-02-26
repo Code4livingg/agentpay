@@ -11,6 +11,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 from urllib.parse import urlparse
 from web3 import Web3
+import traceback
 
 # Agent demo integration
 from agent.demo_agent import DemoAgent
@@ -22,10 +23,16 @@ from sdk.agentpay_client import (
     w3,
     AGENT_VAULT_ADDRESS,
     account,
+    ALCHEMY_RPC,
+    PRIVATE_KEY,
+    USDC_ADDRESS,
 )
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
 load_dotenv()
+print(f"[startup] VAULT_ADDRESS={AGENT_VAULT_ADDRESS}")
+print(f"[startup] RPC configured: {bool(ALCHEMY_RPC)}")
+print(f"[startup] PRIVATE_KEY configured: {bool(PRIVATE_KEY)}")
 
 app = FastAPI(title="AgentPay API")
 
@@ -510,17 +517,22 @@ async def get_network_info():
 
 @app.post("/execute-demo")
 async def execute_demo():
-    if MOCK_MODE:
-        raise HTTPException(status_code=400, detail={"error": "Demo execution is disabled in MOCK_MODE"})
-    if not w3 or not agent_vault or not account:
-        raise HTTPException(status_code=500, detail={"error": "Blockchain client is not configured"})
-
-    agent_id = "weather_agent"
-    recipient = "0x61254AEcF84eEdb890f07dD29f7F3cd3b8Eb2CBe"
-    amount_usdc = 0.50
-    amount_units = int(amount_usdc * 10**6)
-
     try:
+        print("[execute-demo] start")
+        print(f"[execute-demo] connecting to RPC: {ALCHEMY_RPC}")
+        print(f"[execute-demo] contract address: {AGENT_VAULT_ADDRESS}")
+        print(f"[execute-demo] signer address: {account.address}")
+
+        if MOCK_MODE:
+            raise HTTPException(status_code=400, detail={"error": "Demo execution is disabled in MOCK_MODE"})
+        if not w3 or not agent_vault or not account:
+            raise HTTPException(status_code=500, detail={"error": "Blockchain client is not configured"})
+
+        agent_id = "weather_agent"
+        recipient = "0x61254AEcF84eEdb890f07dD29f7F3cd3b8Eb2CBe"
+        amount_usdc = 0.50
+        amount_units = int(amount_usdc * 10**6)
+
         agent_id_bytes = Web3.keccak(text=agent_id)
         recipient_checksum = Web3.to_checksum_address(recipient)
         nonce = w3.eth.get_transaction_count(account.address)
@@ -543,38 +555,40 @@ async def execute_demo():
         print(f"[execute-demo] tx_hash={tx_hash_hex}")
         receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=180)
         print(f"[execute-demo] receipt={receipt}")
+
+        events = agent_vault.events.PaymentExecuted().process_receipt(receipt)
+        print(f"[execute-demo] decoded_events={events}")
+        if not events:
+            raise HTTPException(status_code=500, detail={"error": "PaymentExecuted event not found"})
+
+        event = events[0]["args"]
+        block_number = int(receipt.get("blockNumber", 0) or 0)
+        gas_used = int(receipt.get("gasUsed", 0) or 0)
+        timestamp = int(time.time())
+        if block_number:
+            try:
+                timestamp = int(w3.eth.get_block(block_number).get("timestamp", timestamp))
+            except Exception:
+                pass
+
+        await _insert_paid_transaction(
+            agent_id=agent_id,
+            recipient=event["recipient"],
+            amount_usdc=event["amount"] / 10**6,
+            tx_hash=tx_hash_hex,
+            block_number=block_number,
+            gas_used=gas_used,
+            timestamp=timestamp,
+        )
+        print("[execute-demo] db_insert=success")
+        latest = await db.fetch_transactions(limit=1)
+        print(f"[execute-demo] latest_row={latest}")
+
+        return {"tx_hash": tx_hash_hex}
     except Exception as e:
-        raise HTTPException(status_code=500, detail={"error": f"Execution failed: {str(e)}"})
-
-    events = agent_vault.events.PaymentExecuted().process_receipt(receipt)
-    print(f"[execute-demo] decoded_events={events}")
-    if not events:
-        raise HTTPException(status_code=500, detail={"error": "PaymentExecuted event not found"})
-
-    event = events[0]["args"]
-    block_number = int(receipt.get("blockNumber", 0) or 0)
-    gas_used = int(receipt.get("gasUsed", 0) or 0)
-    timestamp = int(time.time())
-    if block_number:
-        try:
-            timestamp = int(w3.eth.get_block(block_number).get("timestamp", timestamp))
-        except Exception:
-            pass
-
-    await _insert_paid_transaction(
-        agent_id=agent_id,
-        recipient=event["recipient"],
-        amount_usdc=event["amount"] / 10**6,
-        tx_hash=tx_hash_hex,
-        block_number=block_number,
-        gas_used=gas_used,
-        timestamp=timestamp,
-    )
-    print("[execute-demo] db_insert=success")
-    latest = await db.fetch_transactions(limit=1)
-    print(f"[execute-demo] latest_row={latest}")
-
-    return {"tx_hash": tx_hash_hex}
+        print(f"[execute-demo] ERROR: {e}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/agent-execute")
