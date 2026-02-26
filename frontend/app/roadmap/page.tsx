@@ -2,25 +2,25 @@ import Link from 'next/link';
 
 const milestones = [
   {
-    title: 'Wave 1 (Current)',
+    title: 'Wave 6 — First Submission (Current)',
     description:
-      'Core infrastructure: AgentVault contract, policy enforcement, execution indexing, observability dashboard',
+      'Core infrastructure: AgentVault contract, policy enforcement, execution indexing, observability dashboard, AI agent integration, Python SDK, developer docs',
     status: 'done',
   },
   {
-    title: 'Wave 2 (Next)',
+    title: 'Wave 7 (Next)',
     description:
-      'Developer SDK release, multi-agent support (multiple agent_ids per vault), automated event polling replacing manual trigger',
+      'Multi-agent support (multiple agent_ids per vault), automated event polling, SDK v0.2 with TypeScript support',
     status: 'next',
   },
   {
-    title: 'Wave 3',
+    title: 'Wave 8',
     description:
       'Polygon mainnet deployment, first external developer integrations, agent marketplace prototype',
     status: 'next',
   },
   {
-    title: 'Wave 4',
+    title: 'Wave 9',
     description:
       'AggLayer integration for cross-chain agent execution, DAO-controlled policy governance, production SLA',
     status: 'next',
@@ -40,7 +40,7 @@ export default function Roadmap() {
 
       <div className="max-w-3xl mx-auto px-6 py-12">
         <h1 className="text-3xl font-bold">Roadmap</h1>
-        <p className="mt-3 text-[#A1A8B3]">A focused delivery plan for AgentPay on Polygon.</p>
+        <p className="mt-3 text-[#A1A8B3]">AgentPay's buildathon progress and forward roadmap — starting Wave 6.</p>
 
         <div className="mt-8 space-y-6">
           {milestones.map((m, idx) => {
