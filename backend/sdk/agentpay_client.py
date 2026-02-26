@@ -59,17 +59,20 @@ if not MOCK_MODE:
     except Exception as e:
         raise ValueError(f"Failed to load account from PRIVATE_KEY: {str(e)}")
 
-    abi_path = (
+    abi_candidates = [
+        Path(__file__).parent / "abi" / "AgentVault.json",
         Path(__file__).parent.parent.parent
         / "contracts"
         / "artifacts"
         / "contracts"
         / "AgentVault.sol"
-        / "AgentVault.json"
-    )
+        / "AgentVault.json",
+    ]
+    abi_path = next((p for p in abi_candidates if p.exists()), None)
 
-    if not abi_path.exists():
-        raise FileNotFoundError(f"AgentVault ABI not found at {abi_path}")
+    if not abi_path:
+        searched = ", ".join(str(p) for p in abi_candidates)
+        raise FileNotFoundError(f"AgentVault ABI not found. Searched: {searched}")
 
     try:
         with open(abi_path, "r") as f:
