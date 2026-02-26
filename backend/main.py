@@ -12,12 +12,16 @@ from dotenv import load_dotenv
 from urllib.parse import urlparse
 from web3 import Web3
 
+# Agent demo integration
+from agent.demo_agent import DemoAgent
+
 # Import contract instance from SDK
 from sdk.agentpay_client import (
     agent_vault,
     MOCK_MODE,
     w3,
     AGENT_VAULT_ADDRESS,
+    account,
 )
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
@@ -263,6 +267,10 @@ class Transaction(BaseModel):
     timestamp: int
 
 
+class AgentExecuteRequest(BaseModel):
+    task: str
+
+
 def _validate_payment_proof(
     tx_hash: str,
     *,
@@ -333,6 +341,7 @@ async def _insert_paid_transaction(
     tx_hash: str,
     block_number: int,
     gas_used: int,
+    timestamp: int | None = None,
 ):
     if await db.tx_hash_exists(tx_hash):
         raise HTTPException(status_code=409, detail={"error": "Payment proof has already been used"})
@@ -344,7 +353,7 @@ async def _insert_paid_transaction(
         "tx_hash": tx_hash,
         "status": "success",
         "block_reason": None,
-        "timestamp": int(time.time()),
+        "timestamp": int(timestamp or time.time()),
         "created_at": datetime.utcnow().isoformat(),
         "block_number": block_number,
         "gas_used": gas_used,
@@ -457,6 +466,136 @@ async def get_onchain_transactions():
     return await get_transactions()
 
 
+@app.get("/executions")
+async def get_executions():
+    rows = await db.fetch_transactions(limit=50)
+    data = []
+    for tx in rows:
+        tx["tx_url"] = f"https://amoy.polygonscan.com/tx/{tx['tx_hash']}"
+        data.append(tx)
+    return {"executions": data}
+
+
+@app.get("/vault-balance")
+async def get_vault_balance():
+    print("[vault-balance] start")
+    if MOCK_MODE:
+        raise HTTPException(status_code=400, detail={"error": "Vault balance is unavailable in MOCK_MODE"})
+    if not w3 or not agent_vault:
+        raise HTTPException(status_code=500, detail={"error": "Blockchain client is not configured"})
+
+    agent_id = "weather_agent"
+    agent_id_bytes = Web3.keccak(text=agent_id)
+    try:
+        balance_units = agent_vault.functions.getBalance(agent_id_bytes).call()
+        balance_usdc = balance_units / 10**6
+    except Exception as e:
+        raise HTTPException(status_code=500, detail={"error": f"Failed to fetch vault balance: {str(e)}"})
+
+    print(f"[vault-balance] balance_usdc={balance_usdc:.2f}")
+    return {"balance_usdc": f"{balance_usdc:.2f}"}
+
+
+@app.get("/network-info")
+async def get_network_info():
+    print("[network-info] start")
+    payload = {
+        "chain": "Polygon Amoy",
+        "chain_id": 80002,
+        "why_polygon": (
+            "Sub-second finality enables real-time agent execution. "
+            "Near-zero gas fees make micro-payments economically viable. "
+            "AggLayer compatibility future-proofs cross-chain agent coordination."
+        ),
+    }
+    print("[network-info] done")
+    return payload
+
+
+@app.post("/execute-demo")
+async def execute_demo():
+    if MOCK_MODE:
+        raise HTTPException(status_code=400, detail={"error": "Demo execution is disabled in MOCK_MODE"})
+    if not w3 or not agent_vault or not account:
+        raise HTTPException(status_code=500, detail={"error": "Blockchain client is not configured"})
+
+    agent_id = "weather_agent"
+    recipient = "0x61254AEcF84eEdb890f07dD29f7F3cd3b8Eb2CBe"
+    amount_usdc = 0.50
+    amount_units = int(amount_usdc * 10**6)
+
+    try:
+        agent_id_bytes = Web3.keccak(text=agent_id)
+        recipient_checksum = Web3.to_checksum_address(recipient)
+        nonce = w3.eth.get_transaction_count(account.address)
+        tx = agent_vault.functions.executePayment(
+            agent_id_bytes,
+            amount_units,
+            recipient_checksum,
+        ).build_transaction(
+            {
+                "from": account.address,
+                "nonce": nonce,
+                "gas": 300000,
+                "gasPrice": w3.eth.gas_price,
+                "chainId": w3.eth.chain_id,
+            }
+        )
+        signed = account.sign_transaction(tx)
+        tx_hash = w3.eth.send_raw_transaction(signed.rawTransaction)
+        tx_hash_hex = tx_hash.hex()
+        print(f"[execute-demo] tx_hash={tx_hash_hex}")
+        receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=180)
+        print(f"[execute-demo] receipt={receipt}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail={"error": f"Execution failed: {str(e)}"})
+
+    events = agent_vault.events.PaymentExecuted().process_receipt(receipt)
+    print(f"[execute-demo] decoded_events={events}")
+    if not events:
+        raise HTTPException(status_code=500, detail={"error": "PaymentExecuted event not found"})
+
+    event = events[0]["args"]
+    block_number = int(receipt.get("blockNumber", 0) or 0)
+    gas_used = int(receipt.get("gasUsed", 0) or 0)
+    timestamp = int(time.time())
+    if block_number:
+        try:
+            timestamp = int(w3.eth.get_block(block_number).get("timestamp", timestamp))
+        except Exception:
+            pass
+
+    await _insert_paid_transaction(
+        agent_id=agent_id,
+        recipient=event["recipient"],
+        amount_usdc=event["amount"] / 10**6,
+        tx_hash=tx_hash_hex,
+        block_number=block_number,
+        gas_used=gas_used,
+        timestamp=timestamp,
+    )
+    print("[execute-demo] db_insert=success")
+    latest = await db.fetch_transactions(limit=1)
+    print(f"[execute-demo] latest_row={latest}")
+
+    return {"tx_hash": tx_hash_hex}
+
+
+@app.post("/agent-execute")
+async def agent_execute(payload: AgentExecuteRequest):
+    print("[agent-execute] start")
+    if not payload.task.strip():
+        raise HTTPException(status_code=400, detail={"error": "Task is required"})
+    try:
+        agent = DemoAgent()
+        result = await asyncio.to_thread(agent.run, payload.task)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail={"error": f"Agent execution failed: {str(e)}"})
+
+    print(f"[agent-execute] done tx_hash={result.get('tx_hash')}")
+    return result
+
+
 @app.post("/transactions")
 async def create_transaction(transaction: Transaction):
     block_number = 0
@@ -490,6 +629,56 @@ async def create_transaction(transaction: Transaction):
         "message": "Transaction saved successfully",
         **transaction.model_dump(),
     }
+
+
+@app.get("/debug/db-status")
+async def db_status():
+    if db.backend == "sqlite":
+        conn = sqlite3.connect(db.sqlite_path)
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) FROM transactions")
+        row_count = int(cur.fetchone()[0])
+        cur.execute("PRAGMA table_info(transactions)")
+        columns = [
+            {
+                "name": r[1],
+                "type": r[2],
+                "notnull": bool(r[3]),
+                "default": r[4],
+            }
+            for r in cur.fetchall()
+        ]
+        conn.close()
+        return {
+            "backend": "sqlite",
+            "row_count": row_count,
+            "columns": columns,
+        }
+
+    async with db.pg_pool.acquire() as conn:
+        row_count = await conn.fetchval("SELECT COUNT(*) FROM transactions")
+        cols = await conn.fetch(
+            """
+            SELECT column_name, data_type, is_nullable, column_default
+            FROM information_schema.columns
+            WHERE table_name = 'transactions'
+            ORDER BY ordinal_position
+            """
+        )
+        columns = [
+            {
+                "name": c["column_name"],
+                "type": c["data_type"],
+                "notnull": c["is_nullable"] == "NO",
+                "default": c["column_default"],
+            }
+            for c in cols
+        ]
+        return {
+            "backend": "postgres",
+            "row_count": int(row_count),
+            "columns": columns,
+        }
 
 
 @app.get("/health")

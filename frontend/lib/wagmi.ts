@@ -5,39 +5,50 @@ import { defineChain } from 'viem';
 export const polygonAmoy = defineChain({
   id: 80002,
   name: 'Polygon Amoy',
-  nativeCurrency: { name: 'MATIC', symbol: 'MATIC', decimals: 18 },
+  nativeCurrency: { name: 'POL', symbol: 'POL', decimals: 18 },
   rpcUrls: {
-    default: { http: ['https://rpc-amoy.polygon.technology'] },
+    default: { http: [process.env.NEXT_PUBLIC_POLYGON_AMOY_RPC_URL!] },
   },
   blockExplorers: {
     default: { name: 'Polygonscan', url: 'https://amoy.polygonscan.com' },
   },
 });
 
-const amoyRpcUrl =
-  process.env.NEXT_PUBLIC_POLYGON_AMOY_RPC_URL ||
-  'https://rpc-amoy.polygon.technology';
-const walletConnectProjectId =
-  process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
+// ── RPC URL ───────────────────────────────────────────────────────────────────
+// Must be set via NEXT_PUBLIC_POLYGON_AMOY_RPC_URL (e.g. an Alchemy endpoint).
+// The public fallback (rpc-amoy.polygon.technology) is intentionally removed
+// because it returns incorrect gas estimations, causing "gas limit too high" errors.
+const amoyRpcUrl = process.env.NEXT_PUBLIC_POLYGON_AMOY_RPC_URL!;
+
+if (!amoyRpcUrl) {
+  throw new Error(
+    '[wagmi] NEXT_PUBLIC_POLYGON_AMOY_RPC_URL is not set. ' +
+    'Add it to .env.local (e.g. an Alchemy Amoy URL) before starting the app.'
+  );
+}
+
+// ── Connectors ────────────────────────────────────────────────────────────────
+const walletConnectProjectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
 
 const connectors = [
   injected({ shimDisconnect: true }),
   ...(walletConnectProjectId
     ? [
-        walletConnect({
-          projectId: walletConnectProjectId,
-          metadata: {
-            name: 'AgentPay',
-            description: 'AgentPay dashboard wallet connection',
-            url: 'http://localhost:3000',
-            icons: ['https://amoy.polygonscan.com/favicon.ico'],
-          },
-          showQrModal: true,
-        }),
-      ]
+      walletConnect({
+        projectId: walletConnectProjectId,
+        metadata: {
+          name: 'AgentPay',
+          description: 'AgentPay dashboard wallet connection',
+          url: 'http://localhost:3000',
+          icons: ['https://amoy.polygonscan.com/favicon.ico'],
+        },
+        showQrModal: true,
+      }),
+    ]
     : []),
 ];
 
+// ── Wagmi config ──────────────────────────────────────────────────────────────
 export const config = createConfig({
   chains: [polygonAmoy],
   connectors,

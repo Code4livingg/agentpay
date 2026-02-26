@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useAccount, useWriteContract } from 'wagmi';
 import { parseUnits } from 'viem';
@@ -60,6 +60,17 @@ export default function Dashboard() {
   const [depositAmount, setDepositAmount] = useState('1.00');
   const [isPaused, setIsPaused] = useState(false);
   const [depositStatus, setDepositStatus] = useState<'idle' | 'approving' | 'depositing' | 'done' | 'error'>('idle');
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [dbStatus, setDbStatus] = useState<{ backend: string; row_count: number } | null>(null);
+  const [pollingActive, setPollingActive] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [vaultBalance, setVaultBalance] = useState<string>('—');
+  const [balanceLoading, setBalanceLoading] = useState(false);
+  const [networkInfo, setNetworkInfo] = useState<{ chain: string; chain_id: number; why_polygon: string } | null>(null);
+  const [agentTask, setAgentTask] = useState('');
+  const [agentResult, setAgentResult] = useState<{ steps: string[]; tx_hash?: string | null } | null>(null);
+  const [agentRunning, setAgentRunning] = useState(false);
+  const [healthStatus, setHealthStatus] = useState<{ status: string; network: string; database: string; mock_mode: boolean } | null>(null);
 
   const handleDeposit = async () => {
     if (!address) {
@@ -116,14 +127,130 @@ export default function Dashboard() {
     }
   };
 
-  useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/transactions/onchain`)
+  const fetchExecutions = (showLoading = true) => {
+    if (showLoading) setLoading(true);
+    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/executions`)
       .then(r => r.json())
       .then(data => {
-        setTransactions(data.transactions);
-        setLoading(false);
+        console.log('[ExecutionFeed] /executions payload:', data);
+        setTransactions(data.executions || []);
+        console.log('[ExecutionFeed] state updated, count:', (data.executions || []).length);
+        if (showLoading) setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        if (showLoading) setLoading(false);
+      });
+  };
+
+  const startPolling = () => {
+    if (pollRef.current) return;
+    pollRef.current = setInterval(() => {
+      fetchExecutions(false);
+    }, 5000);
+    setPollingActive(true);
+  };
+
+  const stopPolling = () => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+    setPollingActive(false);
+  };
+
+  const fetchDbStatus = () => {
+    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/debug/db-status`)
+      .then(r => r.json())
+      .then(data => setDbStatus(data))
+      .catch(() => setDbStatus(null));
+  };
+
+  const fetchVaultBalance = () => {
+    setBalanceLoading(true);
+    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/vault-balance`)
+      .then(r => r.json())
+      .then(data => {
+        setVaultBalance(data.balance_usdc ?? '—');
+        setBalanceLoading(false);
+      })
+      .catch(() => {
+        setVaultBalance('—');
+        setBalanceLoading(false);
+      });
+  };
+
+  const fetchNetworkInfo = () => {
+    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/network-info`)
+      .then(r => r.json())
+      .then(data => setNetworkInfo(data))
+      .catch(() => setNetworkInfo(null));
+  };
+
+  const fetchHealth = () => {
+    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/health`)
+      .then(r => r.json())
+      .then(data => setHealthStatus(data))
+      .catch(() => setHealthStatus(null));
+  };
+
+  const runAgent = async () => {
+    if (!agentTask.trim()) return;
+    setAgentRunning(true);
+    setAgentResult(null);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/agent-execute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task: agentTask }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || 'Agent execution failed');
+      }
+      const data = await res.json();
+      setAgentResult({ steps: data.steps || [], tx_hash: data.tx_hash });
+      fetchExecutions();
+      startPolling();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setAgentResult({ steps: [`Error: ${message}`], tx_hash: null });
+    } finally {
+      setAgentRunning(false);
+    }
+  };
+
+  const runDemoExecution = async () => {
+    setIsExecuting(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/execute-demo`, {
+        method: 'POST',
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || 'Demo execution failed');
+      }
+      await res.json();
+      fetchExecutions();
+      startPolling();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      alert(`❌ Demo execution failed: ${message}`);
+    } finally {
+      setIsExecuting(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchExecutions();
+    fetchDbStatus();
+    fetchVaultBalance();
+    fetchNetworkInfo();
+    fetchHealth();
+    const balanceInterval = setInterval(fetchVaultBalance, 10000);
+    return () => {
+      clearInterval(balanceInterval);
+      stopPolling();
+    };
   }, []);
 
   return (
@@ -137,6 +264,12 @@ export default function Dashboard() {
           <Link href="/dashboard" className="text-sm hover:text-white transition" style={{ color: '#A1A8B3' }}>
             Dashboard
           </Link>
+          <Link href="/why-agentpay" className="text-sm hover:text-white transition" style={{ color: '#A1A8B3' }}>
+            Why AgentPay
+          </Link>
+          <Link href="/roadmap" className="text-sm hover:text-white transition" style={{ color: '#A1A8B3' }}>
+            Roadmap
+          </Link>
           <Link href="/demo" className="text-sm hover:text-white transition" style={{ color: '#A1A8B3' }}>
             Demo
           </Link>
@@ -149,6 +282,9 @@ export default function Dashboard() {
             <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#2F6BFF' }}></div>
             Polygon Amoy Testnet
           </div>
+          <div className="text-xs px-3 py-1.5 rounded-full border border-emerald-500/40 text-emerald-300 bg-emerald-500/10">
+            Vault: {balanceLoading ? 'Loading…' : `${vaultBalance} USDC`}
+          </div>
           <ConnectButton />
         </div>
       </nav>
@@ -156,7 +292,7 @@ export default function Dashboard() {
       <div className="max-w-5xl mx-auto px-6 py-12">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold">Agent Dashboard</h1>
+            <h1 className="text-3xl font-bold">Agent Dashboard — Powered by Polygon Amoy — sub-second finality for autonomous agents</h1>
           </div>
           <Link href="/" className="hover:text-white text-sm" style={{ color: '#A1A8B3' }}>
             ← Back
@@ -211,6 +347,45 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {networkInfo && (
+          <div className="mb-8 rounded-xl bg-[#16181D] border border-[#1F2329] p-5">
+            <div className="text-sm text-[#A1A8B3]">Network</div>
+            <div className="font-semibold">
+              {networkInfo.chain} · Chain ID {networkInfo.chain_id}
+            </div>
+            <div className="text-sm text-[#A1A8B3] mt-2">
+              {networkInfo.why_polygon}
+            </div>
+          </div>
+        )}
+
+        <div className="mb-8 rounded-xl bg-[#16181D] border border-[#1F2329] p-5">
+          <div className="text-sm text-[#A1A8B3] mb-3">Health Checks</div>
+          <div className="grid grid-cols-3 gap-4 text-sm">
+            <div className="rounded-lg border border-[#1F2329] bg-[#0F1115] p-4">
+              <div className="text-[#6B7280]">API</div>
+              <div className="flex items-center gap-2 mt-1">
+                <span className={`h-2 w-2 rounded-full ${healthStatus?.status === 'ok' ? 'bg-emerald-400' : 'bg-red-400'}`}></span>
+                <span>{healthStatus?.status ?? 'unknown'}</span>
+              </div>
+            </div>
+            <div className="rounded-lg border border-[#1F2329] bg-[#0F1115] p-4">
+              <div className="text-[#6B7280]">Database</div>
+              <div className="flex items-center gap-2 mt-1">
+                <span className={`h-2 w-2 rounded-full ${healthStatus?.database ? 'bg-emerald-400' : 'bg-red-400'}`}></span>
+                <span>{healthStatus?.database ?? 'unknown'}</span>
+              </div>
+            </div>
+            <div className="rounded-lg border border-[#1F2329] bg-[#0F1115] p-4">
+              <div className="text-[#6B7280]">Network</div>
+              <div className="flex items-center gap-2 mt-1">
+                <span className={`h-2 w-2 rounded-full ${healthStatus?.network ? 'bg-emerald-400' : 'bg-red-400'}`}></span>
+                <span>{healthStatus?.network ?? 'unknown'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="flex justify-end gap-3 mb-6">
           <button
             onClick={() => setShowFundVault(true)}
@@ -242,21 +417,65 @@ export default function Dashboard() {
 
         <div className="rounded-xl" style={{ backgroundColor: '#16181D', border: '1px solid #1F2329' }}>
           <div className="p-5 flex justify-between items-center" style={{ borderBottom: '1px solid #1F2329' }}>
-            <h2 className="font-semibold">Execution Feed</h2>
-            <button
-              onClick={() => window.location.reload()}
-              className="text-xs hover:text-white"
-              style={{ color: '#A1A8B3' }}
-            >
-              Refresh
-            </button>
+            <div className="flex items-center gap-2">
+              <h2 className="font-semibold">Execution Feed</h2>
+              {pollingActive && (
+                <span className="flex items-center gap-1 text-xs text-emerald-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+                  Live
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              {dbStatus && (
+                <div className="text-xs" style={{ color: '#6B7280' }}>
+                  DB: {dbStatus.backend} · Rows: {dbStatus.row_count}
+                </div>
+              )}
+              <button
+                onClick={runDemoExecution}
+                disabled={isExecuting}
+                className="text-xs px-3 py-1.5 rounded"
+                style={{
+                  backgroundColor: isExecuting ? '#1F2329' : '#1a2332',
+                  border: '1px solid #2F6BFF',
+                  color: isExecuting ? '#6B7280' : '#4A7FFF',
+                  cursor: isExecuting ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {isExecuting ? 'Running…' : 'Run Demo Execution'}
+              </button>
+              <button
+                onClick={() => {
+                  fetchExecutions();
+                  fetchDbStatus();
+                }}
+                className="text-xs hover:text-white"
+                style={{ color: '#A1A8B3' }}
+              >
+                Refresh
+              </button>
+            </div>
           </div>
 
           {loading ? (
-            <div className="p-8 text-center" style={{ color: '#6B7280' }}>Loading...</div>
+            <div className="p-5">
+              <div className="animate-pulse space-y-3">
+                {[1, 2, 3, 4].map((row) => (
+                  <div key={row} className="grid grid-cols-6 gap-4">
+                    <div className="h-4 rounded bg-[#1F2329]"></div>
+                    <div className="h-4 rounded bg-[#1F2329]"></div>
+                    <div className="h-4 rounded bg-[#1F2329]"></div>
+                    <div className="h-4 rounded bg-[#1F2329]"></div>
+                    <div className="h-4 rounded bg-[#1F2329]"></div>
+                    <div className="h-4 rounded bg-[#1F2329]"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
           ) : transactions.length === 0 ? (
-            <div className="p-8 text-center" style={{ color: '#6B7280' }}>
-              No executions yet. Run the demo to see policy-bound transactions appear here.
+            <div className="p-8 text-center text-[#6B7280]">
+              No executions yet. Run a demo to see live results.
             </div>
           ) : (
             <table className="w-full text-sm">
@@ -265,9 +484,8 @@ export default function Dashboard() {
                   <th className="text-left p-4">Time</th>
                   <th className="text-left p-4">Agent</th>
                   <th className="text-left p-4">Amount</th>
+                  <th className="text-left p-4">Recipient</th>
                   <th className="text-left p-4">Tx Hash</th>
-                  <th className="text-left p-4">Block</th>
-                  <th className="text-left p-4">Gas Used</th>
                   <th className="text-left p-4">Status</th>
                 </tr>
               </thead>
@@ -277,10 +495,13 @@ export default function Dashboard() {
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#16181D'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
                     <td className="p-4" style={{ color: '#A1A8B3' }}>
-                      {new Date(tx.timestamp * 1000).toLocaleTimeString()}
+                      {new Date(tx.timestamp * 1000).toLocaleString()}
                     </td>
                     <td className="p-4 font-mono">{tx.agent_id}</td>
                     <td className="p-4">${tx.amount_usdc} USDC</td>
+                    <td className="p-4 font-mono" style={{ color: '#A1A8B3' }}>
+                      {tx.recipient?.slice(0, 10)}...
+                    </td>
                     <td className="p-4 font-mono">
                       <a
                         href={tx.tx_url}
@@ -292,24 +513,61 @@ export default function Dashboard() {
                         {tx.tx_hash?.slice(0, 18)}...
                       </a>
                     </td>
-                    <td className="p-4" style={{ color: '#A1A8B3' }}>{tx.block_number || '—'}</td>
-                    <td className="p-4" style={{ color: '#A1A8B3' }}>{tx.gas_used ? tx.gas_used.toLocaleString() : '—'}</td>
                     <td className="p-4">
-                      <span
-                        className="px-2 py-1 rounded text-xs"
-                        style={tx.status === 'success'
-                          ? { backgroundColor: '#1a3a2e', color: '#10b981' }
-                          : { backgroundColor: '#3a1a1a', color: '#ef4444' }
-                        }
-                      >
-                        {tx.status}
-                      </span>
+                      {tx.block_number ? (
+                        <span className="px-2 py-1 rounded text-xs bg-emerald-500/20 text-emerald-300">
+                          Confirmed
+                        </span>
+                      ) : (
+                        <span className="px-2 py-1 rounded text-xs bg-yellow-500/20 text-yellow-300">
+                          Pending
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           )}
+        </div>
+
+        <div className="mt-8 rounded-xl bg-[#16181D] border border-[#1F2329] p-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">AI Agent</h3>
+            <span className="text-xs text-[#6B7280]">Autonomous execution via OpenAI</span>
+          </div>
+          <div className="mt-4 flex flex-col gap-3">
+            <input
+              value={agentTask}
+              onChange={(e) => setAgentTask(e.target.value)}
+              placeholder="Give your agent a task"
+              className="w-full rounded-lg border border-[#2A2F36] bg-[#0F1115] px-4 py-2 text-sm text-white placeholder:text-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#2F6BFF]/60"
+            />
+            <div className="flex items-center gap-3">
+              <button
+                onClick={runAgent}
+                disabled={agentRunning || !agentTask.trim()}
+                className="rounded-lg px-4 py-2 text-sm font-medium text-white bg-[#2F6BFF] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {agentRunning ? 'Running…' : 'Run Agent'}
+              </button>
+              {agentResult?.tx_hash && (
+                <span className="text-xs text-emerald-300">
+                  Tx: {agentResult.tx_hash.slice(0, 12)}...
+                </span>
+              )}
+            </div>
+            {agentResult && (
+              <div className="rounded-lg border border-[#1F2329] bg-[#0F1115] p-4">
+                <div className="text-xs text-[#6B7280] mb-2">Agent steps</div>
+                <ul className="text-sm text-[#D1D5DB] list-disc pl-5">
+                  {agentResult.steps.map((step, idx) => (
+                    <li key={idx}>{step}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
