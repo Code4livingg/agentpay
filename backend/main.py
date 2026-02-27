@@ -538,8 +538,8 @@ async def execute_demo():
         nonce = w3.eth.get_transaction_count(account.address)
         tx = agent_vault.functions.executePayment(
             agent_id_bytes,
-            amount_units,
             recipient_checksum,
+            amount_units,
         ).build_transaction(
             {
                 "from": account.address,
